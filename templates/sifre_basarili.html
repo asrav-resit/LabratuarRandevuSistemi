@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block icerik %}
+<div class="row justify-content-center" style="margin-top: 100px;">
+    <div class="col-md-6 text-center">
+        <div class="card shadow p-5">
+            <div style="font-size: 50px; color: green; margin-bottom: 20px;">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h3>İşlem Başarılı!</h3>
+            <p class="lead">Şifreniz başarıyla değiştirildi.</p>
+            <a href="{% url 'giris' %}" class="btn btn-primary mt-3">Giriş Yap</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
