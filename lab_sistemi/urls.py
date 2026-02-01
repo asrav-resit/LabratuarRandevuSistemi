@@ -1,17 +1,13 @@
 """
 Uygulama URL Konfigürasyonu
-
-Bu modül, uygulamanın tüm yönlendirme (routing) işlemlerini yönetir.
-Yapı: Admin > API > Kimlik > Genel > Laboratuvar > Yönetim şeklinde gruplanmıştır.
 """
-
 from django.contrib import admin
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.conf.urls.static import static
 
-# Views modülünü bütün olarak çekiyoruz (Daha temiz kod yapısı)
+# Views modülünü bütün olarak çekiyoruz
 from rezervasyon import views
 
 urlpatterns = [
@@ -20,13 +16,12 @@ urlpatterns = [
     # ========================================================
     path("admin/", admin.site.urls),
     
-    # --- API ENDPOINTS (AJAX ve JavaScript için) ---
-    # Sol menüdeki kırmızı bildirim sayısı
+    # --- API ENDPOINTS ---
+    # Sol menü bildirimi için
     path("api/onay-bekleyen-sayisi/", views.onay_bekleyen_sayisi, name="onay_bekleyen_sayisi"),
-    # FullCalendar için Randevu Verileri (JSON)
-    path("api/events/<int:lab_id>/", views.lab_events, name="lab_events"),
-    # FullCalendar için Cihaz Listesi (JSON)
-    path("api/resources/<int:lab_id>/", views.lab_resources, name="lab_resources"),
+    
+    # YENİ TAKVİM API'Sİ (Burası güncel olan)
+    path('api/lab/<int:lab_id>/events/', views.lab_events_api, name='lab_events_api'),
 
     # ========================================================
     # 2. ANA SAYFA VE GENEL
@@ -42,18 +37,14 @@ urlpatterns = [
     path("email-dogrulama/", views.email_dogrulama, name="email_dogrulama"),
 
     # Şifre Değiştirme
-    path("sifre-degistir/", 
-         auth_views.PasswordChangeView.as_view(template_name="sifre_degistir.html"), 
-         name="password_change"),
-    path("sifre-degistir/tamam/", 
-         auth_views.PasswordChangeDoneView.as_view(template_name="sifre_basarili.html"), 
-         name="password_change_done"),
+    path("sifre-degistir/", auth_views.PasswordChangeView.as_view(template_name="sifre_degistir.html"), name="password_change"),
+    path("sifre-degistir/tamam/", auth_views.PasswordChangeDoneView.as_view(template_name="sifre_basarili.html"), name="password_change_done"),
 
     # ========================================================
     # 4. TAKVİM GÖRÜNÜMLERİ
     # ========================================================
     path("takvim/", views.genel_takvim, name="genel_takvim"),
-    path("takvim/lab/<int:lab_id>/", views.lab_takvim, name="lab_takvim"),
+    # (Eski lab_takvim satırı buradan silindi, aşağıda doğrusu var)
 
     # ========================================================
     # 5. LABORATUVAR VE CİHAZ İŞLEMLERİ
@@ -61,7 +52,9 @@ urlpatterns = [
     path("lab/<int:lab_id>/", views.lab_detay, name="lab_detay"),
     path("cihaz/<int:cihaz_id>/", views.randevu_al, name="randevu_al"),
     path("ariza-bildir/<int:cihaz_id>/", views.ariza_bildir, name="ariza_bildir"),
-    path('api/randevular/', views.randevulari_getir, name='randevulari_getir'),
+    
+    # YENİ LAB TAKVİMİ SAYFASI (Doğru yer burası)
+    path('lab/<int:lab_id>/takvim/', views.lab_takvim, name='lab_takvim'),
 
     # ========================================================
     # 6. KULLANICI PROFİLİ VE RANDEVULARIM
@@ -79,12 +72,10 @@ urlpatterns = [
     path("yonetim/arizali-cihazlar/", views.arizali_cihaz_listesi, name="arizali_cihaz_listesi"),
     path("yonetim/tum-randevular/", views.tum_randevular, name="tum_randevular"),
 
-    # Randevu Durum Güncelleme (Onay/Red/Geldi)
-    path("durum-degis/<int:randevu_id>/<str:yeni_durum>/", 
-         views.durum_guncelle, 
-         name="durum_guncelle"),
+    # Randevu Durum Güncelleme
+    path("durum-degis/<int:randevu_id>/<str:yeni_durum>/", views.durum_guncelle, name="durum_guncelle"),
 ]
 
-# --- MEDYA DOSYALARI (SADECE DEBUG MODUNDA) ---
+# --- MEDYA DOSYALARI ---
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
