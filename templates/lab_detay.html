@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{# Template: Laboratuvar detay sayfası
+   View: `rezervasyon.views.lab_detay`
+   Beklenen context: 'lab', 'cihazlar'
+#}
+
+{% block icerik %}
+
+<div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+    <div>
+        <h2 class="text-primary fw-bold mb-0">
+            <i class="bi bi-geo-alt-fill text-danger"></i> {{ lab.isim }}
+        </h2>
+        <p class="text-muted mt-1 mb-0">{{ lab.aciklama|default:"Laboratuvar detay bilgisi girilmemiş." }}</p>
+    </div>
+
+    <a href="{% url 'lab_takvim' lab.id %}" class="btn btn-warning shadow-sm fw-bold text-dark">
+        <i class="bi bi-calendar-week"></i> Haftalık Programı Gör
+    </a>
+</div>
+
+<h4 class="mb-3 text-secondary"><i class="bi bi-cpu"></i> Randevu Alabileceğiniz Cihazlar:</h4>
+
+<div class="row">
+    {% for cihaz in cihazlar %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 shadow-sm border-0 transition-hover">
+
+            <div class="card-body d-flex flex-column">
+
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h5 class="card-title text-dark fw-bold mb-0">
+                        <i class="bi bi-hdd-network text-primary opacity-50"></i> {{ cihaz.isim }}
+                    </h5>
+                    {% if cihaz.aktif_mi %}
+                    <span class="badge bg-success bg-opacity-10 text-success border border-success">Müsait</span>
+                    {% else %}
+                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger">Arızalı</span>
+                    {% endif %}
+                </div>
+
+                <p class="card-text text-secondary small flex-grow-1">
+                    {{ cihaz.aciklama|default:"Cihaz özellikleri ve kullanım talimatları burada yer alır." }}
+                </p>
+
+                <div class="mt-3 pt-3 border-top">
+                    <div class="d-flex gap-2">
+                        {% if cihaz.aktif_mi %}
+                        <a href="{% url 'randevu_al' cihaz.id %}" class="btn btn-outline-primary flex-grow-1 fw-bold">
+                            Randevu Al <i class="bi bi-calendar-plus"></i>
+                        </a>
+                        {% else %}
+                        <button class="btn btn-light text-muted border flex-grow-1" disabled>
+                            <i class="bi bi-slash-circle"></i> Kullanım Dışı
+                        </button>
+                        {% endif %}
+
+                        <a href="{% url 'ariza_bildir' cihaz.id %}" class="btn btn-outline-danger" title="Arıza Bildir"
+                            data-bs-toggle="tooltip">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-info text-center py-4">
+            <i class="bi bi-info-circle fs-2 mb-2"></i><br>
+            Bu laboratuvarda henüz tanımlı cihaz bulunmamaktadır.
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="mt-4 mb-5">
+    <a href="{% url 'anasayfa' %}" class="btn btn-link text-decoration-none ps-0 fw-bold">
+        <i class="bi bi-arrow-left"></i> Laboratuvar Listesine Dön
+    </a>
+</div>
+
+<style>
+    .transition-hover {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease;
+    }
+
+    .transition-hover:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15) !important;
+    }
+</style>
+
+{% endblock %}

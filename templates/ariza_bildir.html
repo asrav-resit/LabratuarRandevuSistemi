@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{# Template: Arıza bildirme formu
+   View: `rezervasyon.views.ariza_bildir`
+   Beklenen context: 'form', 'cihaz'
+#}
+
+{% block icerik %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow border-danger">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0"><i class="bi bi-exclamation-triangle-fill"></i> Arıza Bildir</h4>
+            </div>
+            <div class="card-body p-4">
+                <h5 class="card-title">{{ cihaz.isim }}</h5>
+                <p class="text-muted">{{ cihaz.lab.isim }}</p>
+
+                <div class="alert alert-warning small">
+                    <i class="bi bi-info-circle"></i>
+                    Bildirdiğiniz arıza laboratuvar sorumlusuna iletilecektir.
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        {{ form.aciklama.label_tag }}
+                        {{ form.aciklama }}
+                    </div>
+                    <button type="submit" class="btn btn-danger w-100">
+                        Bildirimi Gönder 🚀
+                    </button>
+                    <a href="javascript:history.back()" class="btn btn-link w-100 text-secondary mt-2">İptal</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

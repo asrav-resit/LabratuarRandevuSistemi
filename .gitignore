@@ -1,0 +1,22 @@
+# --- Gizli ve Hassas Dosyalar (ASLA YÜKLEME) ---
+.env
+
+# --- Sanal Ortam Klasörleri (Hata veren kısım burasıydı) ---
+.venv/
+venv/
+env/
+
+# --- Python Gereksiz Dosyaları ---
+*.pyc
+__pycache__/
+
+# --- Veritabanı (İsteğe bağlı, sunucuda sıfırdan oluşur) ---
+*.sqlite3
+db.sqlite3
+
+# --- Medya ve Statik (Sunucuda oluşacaklar) ---
+media/
+staticfiles/
+
+# --- VS Code Ayarları ---
+.vscode/

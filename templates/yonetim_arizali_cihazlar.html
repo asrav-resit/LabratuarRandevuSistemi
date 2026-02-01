@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{# Template: Yönetici -> Arızalı cihazlar listesi
+   View: `rezervasyon.views.arizali_cihaz_listesi`
+   Beklenen context: 'cihazlar'
+#}
+{% block icerik %}
+<div class="container mt-4">
+    <h3>🛠️ Arızalı / Pasif Cihazlar</h3>
+    <table class="table table-danger mt-3">
+        <thead>
+            <tr>
+                <th>Cihaz Adı</th>
+                <th>Laboratuvar</th>
+                <th>Açıklama</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cihaz in cihazlar %}
+            <tr>
+                <td>{{ cihaz.isim }}</td>
+                <td>{{ cihaz.lab.isim }}</td>
+                <td>{{ cihaz.aciklama }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3">Arızalı cihaz bulunmamaktadır.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <a href="{% url 'egitmen_paneli' %}" class="btn btn-secondary">🔙 Geri Dön</a>
+</div>
+{% endblock %}

@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+
+{# Bu template: Laboratuvar takvimini gösterir. View: `rezervasyon.views.lab_takvim` #}
+{# Beklenen context: 'lab' (Laboratuvar), 'olaylar_json' (FullCalendar events JSON), 'cihazlar_json' (lab cihaz listesi) #}
+
+{% block icerik %}
+<div class="container-fluid mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2 class="text-primary fw-bold">📅 {{ lab.isim }} Programı</h2>
+            <p class="text-muted">Bu laboratuvarın haftalık doluluk durumu.</p>
+        </div>
+
+        <div>
+            <a href="{% url 'lab_detay' lab.id %}" class="btn btn-outline-primary me-2">
+                ⚙️ Cihaz Listesine Dön
+            </a>
+            <div class="btn-group">
+                <span class="btn btn-sm btn-primary disabled"
+                    style="opacity: 1; background-color: #3788d8; border: none;">Bekleniyor</span>
+                <span class="btn btn-sm btn-success disabled"
+                    style="opacity: 1; background-color: #28a745; border: none;">Geldi</span>
+                <span class="btn btn-sm btn-danger disabled"
+                    style="opacity: 1; background-color: #dc3545; border: none;">Gelmedi</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow border-0">
+        <div class="card-body p-2">
+            <div id='calendar'></div>
+        </div>
+    </div>
+</div>
+
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var calendarEl = document.getElementById('calendar');
+
+        // Devices passed from backend
+        var devices = {{ cihazlar_json|safe }};
+
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'timeGridWeek',
+            locale: 'tr',
+            firstDay: 1,
+
+            selectable: true,
+            slotMinTime: '08:00:00',
+            slotMaxTime: '20:00:00',
+            allDaySlot: false,
+
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'timeGridWeek,timeGridDay,dayGridMonth'
+            },
+
+            buttonText: {
+                today: 'Bugün',
+                month: 'Aylık',
+                week: 'Haftalık',
+                day: 'Günlük'
+            },
+
+            // Dynamic events via API
+            events: function(fetchInfo, successCallback, failureCallback) {
+                fetch(`/api/lab/{{ lab.id }}/events/`)
+                    .then(res => {
+                        if (!res.ok) throw new Error('Network response not ok');
+                        return res.json();
+                    })
+                    .then(data => successCallback(data))
+                    .catch(err => { console.error('Event load error', err); failureCallback(err); });
+            },
+
+            eventDidMount: function (info) {
+                info.el.title = info.event.title;
+            },
+
+            eventClick: function(info) {
+                // Populate modal
+                var ev = info.event;
+                document.getElementById('mcTitle').innerText = ev.title;
+                document.getElementById('mcCihaz').innerText = ev.extendedProps.cihaz_id || '';
+                document.getElementById('mcKullanici').innerText = ev.extendedProps.kullanici || '';
+                document.getElementById('mcDurum').innerText = ev.extendedProps.durum || '';
+                document.getElementById('mcTarih').innerText = ev.start.toLocaleString();
+                document.getElementById('mcTimes').innerText = ev.start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) + ' - ' + ev.end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                document.getElementById('mcReserveLink').href = `/cihaz/${ev.extendedProps.cihaz_id}/?tarih=${ev.start.toISOString().slice(0,10)}&baslangic=${ev.start.toTimeString().slice(0,5)}&bitis=${ev.end.toTimeString().slice(0,5)}`;
+
+                var modal = new bootstrap.Modal(document.getElementById('eventModal'));
+                modal.show();
+            },
+
+            select: function(selectionInfo) {
+                // On empty slot select, ask user to choose a device to reserve
+                var start = selectionInfo.start;
+                var end = selectionInfo.end;
+                var deviceOptions = devices.map(d => `<option value="${d.id}">${d.isim}</option>`).join('');
+                document.getElementById('selectDevice').innerHTML = deviceOptions;
+                document.getElementById('selectDate').value = start.toISOString().slice(0,10);
+                document.getElementById('selectStart').value = start.toTimeString().slice(0,5);
+                document.getElementById('selectEnd').value = end.toTimeString().slice(0,5);
+                var modal = new bootstrap.Modal(document.getElementById('selectModal'));
+                modal.show();
+            }
+        });
+
+        calendar.render();
+    });
+</script>
+
+<!-- Event Details Modal -->
+<div class="modal fade" id="eventModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="mcTitle">Etkinlik</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Cihaz ID:</strong> <span id="mcCihaz"></span></p>
+        <p><strong>Kullanıcı:</strong> <span id="mcKullanici"></span></p>
+        <p><strong>Durum:</strong> <span id="mcDurum"></span></p>
+        <p><strong>Tarih:</strong> <span id="mcTarih"></span></p>
+        <p><strong>Saat:</strong> <span id="mcTimes"></span></p>
+      </div>
+      <div class="modal-footer">
+        <a id="mcReserveLink" class="btn btn-primary">Rezervasyonu Aç</a>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Select slot modal to start reservation -->
+<div class="modal fade" id="selectModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Randevu Oluştur</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-2">
+          <label class="form-label">Cihaz</label>
+          <select id="selectDevice" class="form-select"></select>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Tarih</label>
+          <input id="selectDate" class="form-control" readonly />
+        </div>
+        <div class="row">
+          <div class="col">
+            <label class="form-label">Başlangıç</label>
+            <input id="selectStart" class="form-control" readonly />
+          </div>
+          <div class="col">
+            <label class="form-label">Bitiş</label>
+            <input id="selectEnd" class="form-control" readonly />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <a id="createReserveBtn" class="btn btn-success">Rezerve Et</a>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Hook create reserve button
+  document.addEventListener('click', function(e){
+    if (e.target && e.target.id === 'createReserveBtn'){
+      var cihazId = document.getElementById('selectDevice').value;
+      var tarih = document.getElementById('selectDate').value;
+      var bas = document.getElementById('selectStart').value;
+      var bit = document.getElementById('selectEnd').value;
+      // Redirect to randevu page with prefilled date and times in querystring
+      window.location.href = `/cihaz/${cihazId}/?tarih=${tarih}&baslangic=${bas}&bitis=${bit}`;
+    }
+  });
+</script>
+
+<style>
+    #calendar {
+        min-height: 750px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .fc-timegrid-slot {
+        height: 3.5em !important;
+    }
+</style>
+
+{% endblock %}

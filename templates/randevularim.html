@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{# Template: Kullanıcının randevularını listeler
+   View: `rezervasyon.views.randevularim`
+   Beklenen context: 'aktif_randevular', 'gecmis_randevular'
+#}
+
+{% block icerik %}
+<div class="container mt-4 mb-5">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary fw-bold">Hesap Yönetimi</h2>
+        <div>
+            <a href="{% url 'randevu_pdf_indir' %}" class="btn btn-danger me-2">
+                <i class="bi bi-file-earmark-pdf-fill"></i> Döküm İndir (PDF)
+            </a>
+
+            <a href="{% url 'anasayfa' %}" class="btn btn-outline-secondary me-2">🏠 Ana Sayfa</a>
+            <a href="{% url 'genel_takvim' %}" class="btn btn-warning">📅 Haftalık Program</a>
+        </div>
+    </div>
+
+    <div class="row">
+
+        <div class="col-md-4 mb-4">
+            <div class="card shadow border-0">
+                <div class="card-body text-center pt-5 pb-4">
+
+                    <div class="mb-3">
+                        {% if user.profil.resim %}
+                        <img src="{{ user.profil.resim.url }}" class="rounded-circle shadow-sm"
+                            style="width: 150px; height: 150px; object-fit: cover; border: 5px solid #f8f9fa;">
+                        {% else %}
+                        <div style="font-size: 80px; color: #ccc;">👤</div>
+                        {% endif %}
+                    </div>
+                    <h4 class="fw-bold">{{ user.first_name }} {{ user.last_name }}</h4>
+                    <p class="text-muted">@{{ user.username }}</p>
+
+                    <hr>
+
+                    <div class="text-start px-3">
+                        <p class="mb-2"><strong>📧 E-Posta:</strong> <br> {{ user.email|default:"Belirtilmemiş" }}</p>
+
+                        <p class="mb-2"><strong>🎓 Okul No:</strong> <br>
+                            {{ user.profil.okul_numarasi|default:"Kayıtlı Değil" }}
+                        </p>
+
+                        <p class="mb-2"><strong>📱 Telefon:</strong> <br>
+                            {{ user.profil.telefon|default:"Kayıtlı Değil" }}
+                        </p>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-4">
+                        <a href="{% url 'profil_duzenle' %}" class="btn btn-primary btn-sm mb-2">
+                            ✏️ Bilgilerimi Düzenle
+                        </a>
+                        <a href="{% url 'password_change' %}" class="btn btn-outline-danger btn-sm">
+                            🔑 Şifremi Değiştir
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+
+
+            <div class="card shadow-sm mb-4 border-0 border-top border-4 border-primary">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 text-primary fw-bold">🚀 Gelecek Randevular</h5>
+                    <span class="badge bg-primary rounded-pill">{{ aktif_randevular|length }}</span>
+                </div>
+                <div class="card-body p-0">
+                    {% if aktif_randevular %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Cihaz</th>
+                                    <th>Tarih / Saat</th>
+                                    <th class="text-end">İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for randevu in aktif_randevular %}
+                                <tr>
+                                    <td>
+                                        <span class="fw-bold text-primary">{{ randevu.cihaz.isim }}</span> <br>
+                                        <small class="text-muted">{{ randevu.cihaz.lab.isim }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex flex-column">
+                                            <span class="fw-bold">{{ randevu.tarih|date:"d M Y" }}</span>
+                                            <span class="badge bg-light text-dark border">{{ randevu.baslangic_saati }}
+                                                - {{ randevu.bitis_saati }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-end">
+                                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                            data-bs-toggle="modal" data-bs-target="#iptalModal{{ randevu.id }}">
+                                            İptal
+                                        </button>
+
+                                        <div class="modal fade text-start" id="iptalModal{{ randevu.id }}" tabindex="-1"
+                                            aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">Randevu İptali</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                            aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <p><strong>{{ randevu.tarih }}</strong> tarihinde, saat
+                                                            <strong>{{ randevu.baslangic_saati }}</strong> için
+                                                            aldığınız <strong>{{ randevu.cihaz.isim }}</strong>
+                                                            randevusunu iptal etmek üzeresiniz.
+                                                        </p>
+                                                        <p class="text-danger small fw-bold">⚠️ Bu işlem geri alınamaz!
+                                                        </p>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary btn-sm"
+                                                            data-bs-dismiss="modal">Vazgeç</button>
+                                                        <a href="{% url 'randevu_iptal' randevu.id %}"
+                                                            class="btn btn-danger btn-sm">Evet, İptal Et</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <p class="text-muted mb-0">Henüz yaklaşan bir randevunuz yok.</p>
+                        <a href="{% url 'genel_takvim' %}" class="btn btn-link text-decoration-none">📅 Hemen Randevu
+                            Al</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0 text-secondary">📂 Geçmiş Randevular</h6>
+                </div>
+                <div class="card-body p-0">
+                    {% if gecmis_randevular %}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped align-middle mb-0" style="font-size: 0.9rem;">
+                            <thead>
+                                <tr>
+                                    <th class="ps-3">Cihaz</th>
+                                    <th>Tarih</th>
+                                    <th>Durum</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for randevu in gecmis_randevular %}
+                                <tr>
+                                    <td class="ps-3">{{ randevu.cihaz.isim }}</td>
+                                    <td>{{ randevu.tarih|date:"d.m.Y" }}</td>
+                                    <td>
+                                        {% if randevu.durum == 'geldi' %}
+                                        <span class="badge bg-success">Katıldı</span>
+                                        {% elif randevu.durum == 'gelmedi' %}
+                                        <span class="badge bg-danger">Gelmedi</span>
+                                        {% elif randevu.durum == 'iptal' %}
+                                        <span class="badge bg-secondary">İptal Edildi</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Tamamlandı</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="p-3 text-center text-muted small">Geçmiş kayıt bulunamadı.</div>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

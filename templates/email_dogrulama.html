@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{# Template: Email doğrulama ekranı
+   View: `rezervasyon.views.email_dogrulama`
+   Beklenen behavior: POST ile doğrulama kodunu kontrol eder
+#}
+
+{% block icerik %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">📧 E-Posta Doğrulama</h4>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                    {% endfor %}
+                    {% endif %}
+
+                    <p class="text-muted">
+                        E-posta adresinize gönderilen <strong>6 haneli doğrulama kodunu</strong> aşağıya giriniz.
+                    </p>
+
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="kod" class="form-label">Doğrulama Kodu</label>
+                            <input type="text" name="kod" class="form-control text-center" placeholder="123456"
+                                maxlength="6" style="font-size: 24px; letter-spacing: 5px;" required>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success btn-lg">Doğrula ve Giriş Yap</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,32 @@
+/* Sidebar'daki (Sol menü) ikonlar için animasyon */
+.nav-sidebar .nav-item:hover .nav-icon {
+    transition: all 0.3s ease;
+    /* Yumuşak geçiş sağlar */
+
+    /* SEÇENEK 1: Hafif Büyüme (Zoom) */
+    transform: scale(1.3);
+    color: #00bcd4;
+    /* İsterseniz rengini de değiştirebilirsiniz */
+}
+
+/* SEÇENEK 2: Sallanma Efekti (Wiggle) - Eğer bunu isterseniz üsttekini silip bunu kullanın */
+/*
+@keyframes wiggle {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(-15deg); }
+  50% { transform: rotate(15deg); }
+  75% { transform: rotate(-5deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.nav-sidebar .nav-item:hover .nav-icon {
+    animation: wiggle 0.5s ease-in-out;
+}
+*/
+
+/* Dashboard kartlarındaki (Ortadaki büyük butonlar) ikonlar için */
+.small-box:hover .icon i {
+    transform: scale(1.2) rotate(10deg);
+    /* Büyür ve hafif döner */
+    transition: all 0.4s ease;
+}

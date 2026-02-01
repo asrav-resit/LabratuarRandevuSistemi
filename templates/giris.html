@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{# Template: Giriş formu
+   View: auth login view / `rezervasyon.views.giris` (kullanıcı girişi)
+   Beklenen context: form
+#}
+
+{% block icerik %}
+<div class="row justify-content-center">
+    <div class="col-md-5 col-lg-4">
+        <div class="card shadow-sm mt-4">
+            <div class="card-header bg-primary text-white text-center py-3">
+                <h3 class="h5 mb-0">🔐 Giriş Yap</h3>
+            </div>
+
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+
+                    {% if form.errors %}
+                    <div class="alert alert-danger text-center p-2 mb-3">
+                        <small>Kullanıcı adı veya şifre hatalı!</small>
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-muted">Kullanıcı Adı</label>
+                        <input type="text" name="username" class="form-control" placeholder="Örn: ogrenci1" required
+                            autofocus>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-muted">Şifre</label>
+                        <input type="password" name="password" class="form-control" placeholder="******" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2">Giriş Yap</button>
+                </form>
+            </div>
+
+            <div class="card-footer text-center bg-light py-3">
+                <p class="mb-0 text-muted" style="font-size: 0.9em;">
+                    Hesabın yok mu?
+                    <a href="{% url 'kayit' %}" class="fw-bold text-decoration-none">Hemen Kayıt Ol</a>
+                </p>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

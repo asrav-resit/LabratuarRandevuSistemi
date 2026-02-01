@@ -1,0 +1,20 @@
+{% extends "admin/change_list.html" %}
+
+{% block object-tools %}
+{{ block.super }}
+<ul class="object-tools">
+    <li>
+        <a href="{% url 'genel_takvim' %}" target="_blank" class="btn btn-high btn-success"
+            style="background-color: #2e7d32; color: white; font-weight: bold;">
+            📅 Haftalık Takvim
+        </a>
+    </li>
+
+    <li>
+        <a href="{% url 'egitmen_paneli' %}" class="btn btn-high btn-danger"
+            style="background-color: #c62828; color: white; font-weight: bold;">
+            📋 Günlük Yoklama Paneli
+        </a>
+    </li>
+</ul>
+{% endblock %}

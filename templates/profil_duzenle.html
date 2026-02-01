@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{# Template: Profil düzenleme
+   View: `rezervasyon.views.profil_duzenle`
+   Beklenen context: 'u_form', 'p_form'
+#}
+
+{% block icerik %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">✏️ Bilgilerimi Düzenle</h4>
+                </div>
+                <div class="card-body p-4">
+
+                    <div class="text-center mb-4">
+                        {% if user.profil.resim %}
+                        <img src="{{ user.profil.resim.url }}" class="rounded-circle shadow-sm"
+                            style="width: 150px; height: 150px; object-fit: cover; border: 3px solid #f8f9fa;">
+                        {% else %}
+                        <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center mx-auto shadow-sm"
+                            style="width: 150px; height: 150px; font-size: 60px; border: 3px solid #f8f9fa;">
+                            {{ user.first_name|first|upper }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <h5 class="text-secondary mb-3">Kişisel Bilgiler</h5>
+                        <div class="mb-3">
+                            <label class="form-label">Adınız</label>
+                            {{ u_form.first_name }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Soyadınız</label>
+                            {{ u_form.last_name }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">E-Posta Adresi</label>
+                            {{ u_form.email }}
+                        </div>
+
+                        <hr class="my-4">
+
+                        <h5 class="text-secondary mb-3">Okul Bilgileri</h5>
+
+                        <div class="mb-3">
+                            <label class="form-label">Profil Resmi</label>
+                            {{ p_form.resim }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Okul Numarası</label>
+                            {{ p_form.okul_numarasi }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Telefon Numarası</label>
+                            {{ p_form.telefon }}
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                Değişiklikleri Kaydet ✅
+                            </button>
+                            <a href="{% url 'randevularim' %}" class="btn btn-outline-secondary">
+                                İptal Et
+                            </a>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

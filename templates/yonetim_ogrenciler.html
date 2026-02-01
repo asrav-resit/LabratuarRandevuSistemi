@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{# Template: Yönetici -> Öğrenci listesi
+   View: `rezervasyon.views.ogrenci_listesi`
+   Beklenen context: 'ogrenciler'
+#}
+{% block icerik %}
+<div class="container mt-4">
+    <h3>🎓 Kayıtlı Öğrenciler</h3>
+    <table class="table table-striped mt-3">
+        <thead>
+            <tr>
+                <th>Ad Soyad</th>
+                <th>Okul No</th>
+                <th>Email</th>
+                <th>Telefon</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for profil in ogrenciler %}
+            <tr>
+                <td>{{ profil.user.first_name }} {{ profil.user.last_name }}</td>
+                <td>{{ profil.okul_numarasi }}</td>
+                <td>{{ profil.user.email }}</td>
+                <td>{{ profil.telefon }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <a href="{% url 'egitmen_paneli' %}" class="btn btn-secondary">🔙 Geri Dön</a>
+</div>
+{% endblock %}

@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{# Template: Tüm randevuları listeler (yönetim)
+   View: `rezervasyon.views.tum_randevular`
+   Beklenen context: 'randevular'
+#}
+
+{% block icerik %}
+<div class="container mt-4 mb-5">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>📅 Tüm Randevu Kayıtları</h3>
+        <a href="{% url 'egitmen_paneli' %}" class="btn btn-secondary">🔙 Panele Dön</a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Öğrenci Adı</th>
+                            <th>Okul No</th>
+                            <th>Cihaz</th>
+                            <th>Tarih & Saat</th>
+                            <th>Durum</th>
+                            <th style="width: 150px;">İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for randevu in randevular %}
+                        <tr>
+                            <td>
+                                <span class="fw-bold">
+                                    {{ randevu.kullanici.first_name }} {{ randevu.kullanici.last_name }}
+                                </span>
+                            </td>
+
+                            <td>
+                                {{ randevu.kullanici.profil.okul_numarasi|default:"--" }}
+                            </td>
+
+                            <td>
+                                <strong>{{ randevu.cihaz.isim }}</strong><br>
+                                <small class="text-muted">{{ randevu.cihaz.lab.isim }}</small>
+                            </td>
+
+                            <td>
+                                {{ randevu.tarih|date:"d.m.Y" }} <br>
+                                <span class="badge bg-light text-dark border">
+                                    {{ randevu.baslangic_saati }} - {{ randevu.bitis_saati }}
+                                </span>
+                            </td>
+
+                            <td>
+                                {% if randevu.durum == 'geldi' %}
+                                <span class="badge bg-success">GELDİ</span>
+                                {% elif randevu.durum == 'gelmedi' %}
+                                <span class="badge bg-danger">GELMEDİ</span>
+                                {% elif randevu.durum == 'bekliyor' or randevu.durum == 'bekleniyor' %}
+                                <span class="badge bg-warning text-dark">ONAY BEKLİYOR</span>
+                                {% elif randevu.durum == 'iptal' %}
+                                <span class="badge bg-secondary">İPTAL</span>
+                                {% elif randevu.durum == 'onaylandi' %}
+                                <span class="badge bg-primary">ONAYLANDI</span>
+                                {% elif randevu.durum == 'reddedildi' %}
+                                <span class="badge bg-danger">REDDEDİLDİ</span>
+                                {% else %}
+                                <span class="badge bg-info">{{ randevu.durum|upper }}</span>
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                {% if randevu.durum == 'bekliyor' or randevu.durum == 'bekleniyor' %}
+                                <a href="{% url 'durum_guncelle' randevu.id 'onaylandi' %}"
+                                    class="btn btn-sm btn-success" title="Onayla">✔️</a>
+                                <a href="{% url 'durum_guncelle' randevu.id 'reddedildi' %}"
+                                    class="btn btn-sm btn-danger" title="Reddet">❌</a>
+                                {% else %}
+                                <a href="{% url 'randevu_iptal' randevu.id %}" class="btn btn-sm btn-outline-secondary"
+                                    onclick="return confirm('Bu kaydı silmek istediğinize emin misiniz?');">🗑️ Sil</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4">Kayıt bulunamadı.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

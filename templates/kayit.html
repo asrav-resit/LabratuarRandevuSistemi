@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{# Template: Kayıt formu
+   View: `rezervasyon.views.kayit`
+   Beklenen context: 'form'
+#}
+
+{% block icerik %}
+<style>
+    /* Django'nun otomatik ürettiği formu güzelleştirme */
+    ul.errorlist {
+        color: red;
+        list-style: none;
+        padding: 0;
+    }
+
+    p {
+        margin-bottom: 15px;
+    }
+
+    input {
+        display: block;
+        width: 100%;
+        padding: 0.375rem 0.75rem;
+        font-size: 1rem;
+        line-height: 1.5;
+        color: #212529;
+        background-color: #fff;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+    }
+
+    input:focus {
+        border-color: #86b7fe;
+        outline: 0;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, .25);
+    }
+
+    .helptext {
+        font-size: 0.8em;
+        color: gray;
+        display: block;
+        margin-top: 5px;
+    }
+</style>
+
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow mt-4">
+            <div class="card-header bg-success text-white text-center py-3">
+                <h3 class="h5 mb-0">📝 Yeni Hesap Oluştur</h3>
+            </div>
+
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+
+                    {{ form.as_p }}
+
+                    <button type="submit" class="btn btn-success w-100 py-2 mt-3 fw-bold">Kaydı Tamamla ✅</button>
+                </form>
+            </div>
+
+            <div class="card-footer text-center bg-light py-3">
+                <p class="mb-0 text-muted">
+                    Zaten hesabın var mı?
+                    <a href="{% url 'giris' %}" class="fw-bold text-decoration-none text-primary">Giriş Yap</a>
+                </p>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

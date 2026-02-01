@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Eğitmen Paneli</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+
+    <div class="container mt-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>📋 Günlük Yoklama Listesi</h2>
+            <div>
+                <span class="badge bg-info text-dark fs-6 me-3">{{ bugun|date:"d F Y, l" }}</span>
+                <a href="{% url 'anasayfa' %}" class="btn btn-secondary">🏠 Ana Sayfa</a>
+            </div>
+        </div>
+
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <div class="card shadow">
+            <div class="card-body p-0">
+                <table class="table table-hover align-middle text-center mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Saat</th>
+                            <th>Öğrenci</th>
+                            <th>Lab / Cihaz</th>
+                            <th>Mevcut Durum</th>
+                            <th>İşlem (Yoklama)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for randevu in randevular %}
+                        <tr>
+                            <td class="fw-bold">{{ randevu.baslangic_saati|time:"H:i" }}</td>
+
+                            <td class="text-start">
+                                <span class="fw-bold">{{ randevu.kullanici.username }}</span> <br>
+                                <small class="text-muted">{{ randevu.kullanici.email }}</small>
+                            </td>
+
+                            <td class="text-start small">
+                                <strong>{{ randevu.cihaz.isim }}</strong> <br>
+                                {{ randevu.cihaz.lab.isim }}
+                            </td>
+
+                            <td>
+                                {% if randevu.durum == 'bekleniyor' %}
+                                <span class="badge bg-warning text-dark">⏳ Bekleniyor</span>
+                                {% elif randevu.durum == 'geldi' %}
+                                <span class="badge bg-success">✅ Geldi</span>
+                                {% elif randevu.durum == 'gelmedi' %}
+                                <span class="badge bg-danger">❌ Gelmedi</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ randevu.durum }}</span>
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'durum_guncelle' randevu.id 'geldi' %}"
+                                        class="btn btn-outline-success btn-sm {% if randevu.durum == 'geldi' %}active{% endif %}">
+                                        ✅ Geldi
+                                    </a>
+                                    <a href="{% url 'durum_guncelle' randevu.id 'gelmedi' %}"
+                                        class="btn btn-outline-danger btn-sm {% if randevu.durum == 'gelmedi' %}active{% endif %}">
+                                        ❌ Gelmedi
+                                    </a>
+                                    <a href="{% url 'durum_guncelle' randevu.id 'bekleniyor' %}"
+                                        class="btn btn-outline-secondary btn-sm" title="Sıfırla">
+                                        🔄
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="py-5 text-muted">
+                                <h4>🎉 Bugün hiç randevu yok!</h4>
+                                <p>Laboratuvarlar boş.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

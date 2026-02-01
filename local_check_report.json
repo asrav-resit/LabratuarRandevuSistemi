@@ -1,0 +1,50 @@
+{
+  "ok": true,
+  "details": [
+    {
+      "collectstatic": "ok"
+    },
+    {
+      "create_superuser": "ok"
+    },
+    {
+      "create_student": "ok"
+    },
+    {
+      "create_lab_device": "ok"
+    },
+    {
+      "create_randevu": "ok"
+    },
+    {
+      "admin_login": {
+        "logged_in": true,
+        "status_code": 200
+      }
+    },
+    {
+      "onay_bekleyen_api": {
+        "status_code": 200,
+        "json": {
+          "sayi": 2
+        },
+        "ok": true,
+        "content_snippet": "{\"sayi\": 2}"
+      }
+    },
+    {
+      "pdf_generation": {
+        "status_code": 200,
+        "content_type": "application/pdf",
+        "ok": true,
+        "content_snippet": ""
+      }
+    },
+    {
+      "static_admin_ozel": {
+        "path": "C:\\Users\\Reşit ASRAV\\OkulLabSistemi\\staticfiles\\fonts\\js\\admin_ozel.js",
+        "exists": true
+      }
+    }
+  ]
+}

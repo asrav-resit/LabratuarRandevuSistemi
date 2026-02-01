@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{# Template: Şifre değiştirme ekranı; beklenen context: form #}
+{% block icerik %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-body">
+                <h3 class="mb-4">🔑 Şifre Değiştir</h3>
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <button type="submit" class="btn btn-primary w-100">Yeni Şifreyi Kaydet</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

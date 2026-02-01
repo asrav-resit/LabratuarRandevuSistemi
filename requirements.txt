@@ -1,0 +1,8 @@
+Django
+whitenoise
+python-decouple
+xhtml2pdf
+Pillow
+django-widget-tweaks
+django-extensions
+reportlab

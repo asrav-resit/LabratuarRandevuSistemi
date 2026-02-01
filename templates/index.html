@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block icerik %}
+
+{% if duyurular %}
+<div class="container mt-3">
+    {% for duyuru in duyurular %}
+    <div class="alert alert-warning alert-dismissible fade show shadow-sm border-warning" role="alert">
+        <div class="d-flex align-items-center"></div>
+
+        <div class="fs-1 me-3">📢</div>
+        <div>
+            <h5 class="alert-heading fw-bold mb-1">{{ duyuru.baslik }}</h5>
+            {% if duyuru.icerik %}
+            <p class="mb-0 text-dark">{{ duyuru.icerik }}</p>
+            {% endif %}
+        </div>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
+</div>
+{% endfor %}
+</div>
+{% endif %}
+
+<div class="bg-primary text-white py-5 mb-5" style="background: linear-gradient(135deg, #0d6efd, #0dcaf0);">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                {% if user.is_authenticated %}
+                <h1 class="fw-bold display-5">👋 Hoş geldin, {{ user.first_name }}!</h1>
+                <p class="lead opacity-75">Laboratuvar rezervasyonlarını ve yaklaşan randevularını buradan
+                    yönetebilirsin.</p>
+                {% else %}
+                <h1 class="fw-bold display-5">🎓 Okul Laboratuvar Sistemi</h1>
+                <p class="lead opacity-75">Laboratuvar müsaitlik durumunu inceleyin ve hemen randevu alın.</p>
+                {% endif %}
+            </div>
+            <div class="col-md-4 text-end d-none d-md-block">
+                <i class="bi bi-laptop display-1 opacity-25"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mb-5">
+    <div class="row">
+
+        <div class="col-lg-8">
+            <h4 class="mb-4 fw-bold text-secondary border-bottom pb-2">🔬 Laboratuvarlar</h4>
+
+            <div class="row">
+                {% for lab in labs %} <div class="col-md-6 mb-4">
+                    <div class="card h-100 shadow-sm border-0 hover-card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between mb-3">
+                                <span class="badge bg-light text-primary border border-primary">Laboratuvar</span>
+                                <i class="bi bi-pc-display fs-4 text-secondary"></i>
+                            </div>
+                            <h3 class="card-title fw-bold text-dark h5">{{ lab.isim }}</h3>
+                            <p class="card-text text-muted small">
+                                {{ lab.aciklama|default_if_none:"Açıklama girilmemiş."|truncatechars:80 }}
+                            </p>
+                        </div>
+                        <div class="card-footer bg-white border-top-0 pb-3">
+                            <a href="{% url 'lab_detay' lab.id %}" class="btn btn-outline-primary w-100 stretched-link">
+                                Cihazları İncele & Randevu Al <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="alert alert-info text-center py-5">
+                        <i class="bi bi-info-circle fs-1 d-block mb-3"></i>
+                        <h4>Henüz sisteme kayıtlı bir laboratuvar yok.</h4>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+
+            {% if user.is_authenticated %}
+
+            <div class="card shadow-sm border-0 mb-4 bg-light">
+                <div class="card-body">
+                    <h6 class="text-uppercase text-muted small fw-bold mb-3">Hesap Özeti</h6>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>📅 Aktif Randevular</span>
+                        <span class="badge bg-primary rounded-pill">{{ aktif_randevu_sayisi|default:"0" }}</span>
+                    </div>
+                    <div class="d-grid mt-3">
+                        <a href="{% url 'randevularim' %}" class="btn btn-primary btn-sm">
+                            <i class="bi bi-list-check"></i> Tüm Randevularım
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            {% if siradaki_randevu %}
+            <div class="card shadow border-0 mb-4 border-start border-5 border-success">
+                <div class="card-header bg-white fw-bold text-success d-flex justify-content-between">
+                    <span>🚀 Sıradaki Randevun</span>
+                    <i class="bi bi-clock-history"></i>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title fw-bold text-dark">{{ siradaki_randevu.cihaz.isim }}</h5>
+                    <p class="card-text text-muted mb-1 small">{{ siradaki_randevu.cihaz.lab.isim }}</p>
+                    <hr>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-bold fs-5">{{ siradaki_randevu.tarih|date:"d M" }}</span>
+                        <span class="badge bg-success">{{ siradaki_randevu.baslangic_saati }}</span>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body text-center text-muted py-4">
+                    <i class="bi bi-calendar-x fs-3 mb-2 d-block"></i>
+                    <p class="mb-2">Yaklaşan randevun yok.</p>
+                    <a href="{% url 'genel_takvim' %}" class="btn btn-sm btn-outline-secondary">Takvime Göz At</a>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if user.is_staff %}
+            <div class="card shadow-sm border-0 mb-4 border-start border-5 border-danger">
+                <div class="card-body">
+                    <h6 class="fw-bold text-danger mb-2">🛠 Eğitmen Yönetimi</h6>
+                    <p class="small text-muted mb-3">Onay bekleyen randevular ve arıza bildirimleri.</p>
+                    <a href="{% url 'egitmen_paneli' %}" class="btn btn-danger w-100">
+                        <i class="bi bi-speedometer2"></i> Yönetim Paneline Git
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            {% else %}
+            <div class="card shadow-sm border-0 bg-light mb-4">
+                <div class="card-body text-center py-4">
+                    <i class="bi bi-person-circle fs-1 text-secondary mb-3"></i>
+                    <h5>Sisteme Giriş Yapın</h5>
+                    <p class="text-muted small">Randevu alabilmek için lütfen giriş yapın veya kayıt olun.</p>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'giris' %}" class="btn btn-primary">Giriş Yap</a>
+                        <a href="{% url 'kayit' %}" class="btn btn-outline-dark">Kayıt Ol</a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="d-grid mt-2">
+                <a href="{% url 'genel_takvim' %}" class="btn btn-warning py-3 fw-bold text-dark shadow-sm hover-card">
+                    <i class="bi bi-calendar-week me-2"></i> Genel Haftalık Program
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<style>
+    .hover-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .hover-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15) !important;
+    }
+</style>
+
+{% endblock %}
