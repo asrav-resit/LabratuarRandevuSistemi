@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, date
 
 from django.utils import timezone
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.contrib.auth import login
@@ -91,7 +92,6 @@ def lab_detay(request, lab_id):
 
 
 # ===============================
-# 3. RANDEVU AL (GÜVENLİ)
 # ===============================
 @login_required
 def randevu_al(request, cihaz_id):
