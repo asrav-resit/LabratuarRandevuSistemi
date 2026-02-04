@@ -2,7 +2,7 @@
 Django settings for lab_sistemi project.
 
 Bu dosya:
-1. Senin Jazzmin (Admin Paneli) tasarımlarını korur.
+1. Jazzmin (Admin Paneli) tasarımlarını korur.
 2. Sunucu için gerekli güvenlik (.env, WhiteNoise) ayarlarını içerir.
 3. Gmail ve PDF ayarlarını aktif eder.
 """
@@ -16,7 +16,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # ========================================================
-# 1. GÜVENLİK AYARLARI (KRİTİK)
+# 1. GÜVENLİK AYARLARI 
 # ========================================================
 
 # .env dosyasından okur. Yoksa varsayılan güvensize döner (ama uyarı verir).
@@ -26,19 +26,21 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-CHANGE-THIS-IN-PRODUC
 DEBUG = config('DEBUG', default=True, cast=bool)
 
 # ========================================================
-# GÜVENLİK AYARLARI (GÜNCELLENDİ)
+# GÜVENLİK AYARLARI 
 # ========================================================
 
-# 1. Sitenin çalışacağı adresler (Kendi site adını yazıyoruz)
+# 1. Sitenin çalışacağı adresler 
 ALLOWED_HOSTS = [
     'asravresit.pythonanywhere.com', 
     'localhost', 
     '127.0.0.1'
 ]
 
-# 2. Form güvenliği için gerekli ayar (BUNU EKLEMEZSEN FORM GÖNDEREMEZSİN)
+# 2. Form güvenliği için gerekli ayar (CSRF hatalarını önler)
 CSRF_TRUSTED_ORIGINS = [
     'https://asravresit.pythonanywhere.com',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
 ]
 
 # ========================================================
@@ -92,6 +94,7 @@ TEMPLATES = [
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.debug",
+                "django.template.context_processors.csrf",
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
@@ -180,6 +183,17 @@ LOGIN_REDIRECT_URL = "anasayfa"
 LOGOUT_REDIRECT_URL = "anasayfa"
 LOGIN_URL = "giris"
 
+# Allow login by username OR email while keeping the default backend as fallback.
+AUTHENTICATION_BACKENDS = [
+    "rezervasyon.backends.EmailOrUsernameModelBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
+
+# Explicit CSRF / session cookie settings to avoid token mismatches
+# Sane defaults for local development; adjust for production (HTTPS) as needed.
+CSRF_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SAMESITE = "Lax"
+
 
 # ========================================================
 # 9. UYGULAMA-SPESİFİK AYARLAR
@@ -196,11 +210,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # ========================================================
 
 JAZZMIN_SETTINGS = {
-    "site_title": "Lab Yönetim",
-    "site_header": "Okul Lab Sistemi",
+    "site_title": "Labratuvar Randevu Sistemi",
+    "site_header": "BTÜ Labratuvar Sistemi",
     "site_brand": "Yönetim Paneli",
     "welcome_sign": "Laboratuvar Yönetim Merkezine Hoşgeldiniz",
-    "copyright": "Okul Lab Sistemi 2025",
+    "copyright": "BTÜ Labratuvar Sistemi 2026",
     "search_model": "auth.User",
     "custom_css": "fonts/css/custom_admin.css",
     "user_avatar": None,
@@ -208,7 +222,7 @@ JAZZMIN_SETTINGS = {
     "custom_js": "fonts/js/admin_ozel.js",
     "topmenu_links": [
         {"name": "Ana Sayfa", "url": "admin:index", "permissions": ["auth.view_user"]},
-        {"name": "Siteyi Görüntüle", "url": "/", "new_window": True},
+        {"name": "Randevu Sayfası", "url": "/", "new_window": True},
     ],
     "icons": {
         "auth": "fas fa-users-cog",
@@ -257,5 +271,25 @@ JAZZMIN_UI_TWEAKS = {
         "warning": "btn-warning",
         "danger": "btn-danger",
         "success": "btn-success",
+    },
+}
+
+# ========================================================
+# 10. LOGGING CONFIGURATION (CSRF debug için)
+# ========================================================
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django.security': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
     },
 }

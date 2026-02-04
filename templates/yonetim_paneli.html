@@ -1,60 +1,105 @@
 {% extends 'base.html' %}
-
-{# Template: Yönetici paneli (admin panel için özet)
-   View: `rezervasyon.views.egitmen_paneli`
-   Beklenen context: 'toplam_randevu', 'bekleyen_onay', 'arizali_cihazlar' vb.
-#}
+{% load static %}
 
 {% block icerik %}
-<div class="container mt-4 mb-5">
+<style>
+    /* Kurumsal Dashboard Tasarımı */
+    :root { --btu-blue: #003366; --btu-accent: #00a8cc; --btu-bg: #f0f4f8; }
 
-    <h2 class="mb-4 fw-bold text-dark border-bottom pb-2">📊 Yönetim Paneli & İstatistikler</h2>
+    .stat-card {
+        border: none;
+        border-radius: 20px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
 
-    <div class="row mb-4">
+    .stat-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 30px rgba(0, 51, 102, 0.15) !important;
+    }
 
+    .stat-icon {
+        position: absolute;
+        right: -10px;
+        bottom: -10px;
+        font-size: 5rem;
+        opacity: 0.15;
+        transform: rotate(-15deg);
+    }
+
+    .panel-card {
+        border: none;
+        border-radius: 24px;
+        box-shadow: 0 10px 30px rgba(0, 51, 102, 0.03) !important;
+    }
+
+    .list-group-item {
+        border: none;
+        margin-bottom: 8px;
+        border-radius: 12px !important;
+        background-color: #f8f9fa;
+        transition: all 0.2s;
+    }
+
+    .list-group-item:hover { background-color: #eef2f7; }
+
+    .action-btn {
+        width: 35px;
+        height: 35px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        transition: transform 0.2s;
+    }
+    .action-btn:hover { transform: scale(1.1); }
+</style>
+
+<div class="container-fluid mt-2 mb-5 px-lg-5">
+    
+    <div class="row mb-5 align-items-center">
+        <div class="col-md-8">
+            <h2 class="fw-extrabold text-primary mb-1">
+                <i class="bi bi-speedometer2 me-2"></i>Eğitmen Kontrol Merkezi
+            </h2>
+            <p class="text-muted">Laboratuvar kullanım verilerini analiz edin ve talepleri yönetin.</p>
+        </div>
+        <div class="col-md-4 text-md-end text-muted small">
+            <i class="bi bi-clock me-1"></i> Son Güncelleme: {% now "H:i" %}
+        </div>
+    </div>
+
+    <div class="row g-4 mb-5">
         <div class="col-md-3">
             <a href="{% url 'tum_randevular' %}" class="text-decoration-none">
-                <div class="card text-white bg-primary shadow-sm h-100 transition-hover">
+                <div class="card stat-card bg-primary text-white shadow-sm p-3 h-100">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-0">Toplam Randevu</h6>
-                                <h2 class="fw-bold my-2">{{ toplam_randevu }}</h2>
-                            </div>
-                            <i class="bi bi-calendar-check fs-1 opacity-50"></i>
-                        </div>
+                        <h6 class="text-uppercase small opacity-75 fw-bold">Toplam Randevu</h6>
+                        <h2 class="fw-bold mb-0 display-5">{{ toplam_randevu }}</h2>
+                        <i class="bi bi-calendar-check stat-icon"></i>
                     </div>
                 </div>
             </a>
         </div>
 
         <div class="col-md-3">
-            <a href="#bekleyenlerListesi" class="text-decoration-none">
-                <div class="card text-white bg-warning shadow-sm h-100 transition-hover">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-0 text-dark">Onay Bekleyen</h6>
-                                <h2 class="fw-bold my-2 text-dark">{{ bekleyen_onay }}</h2>
-                            </div>
-                            <i class="bi bi-hourglass-split fs-1 text-dark opacity-50"></i>
-                        </div>
-                    </div>
+            <div class="card stat-card bg-warning text-dark shadow-sm p-3 h-100">
+                <div class="card-body">
+                    <h6 class="text-uppercase small opacity-75 fw-bold">Onay Bekleyen</h6>
+                    <h2 class="fw-bold mb-0 display-5">{{ bekleyen_onay }}</h2>
+                    <i class="bi bi-hourglass-split stat-icon"></i>
                 </div>
-            </a>
+            </div>
         </div>
 
         <div class="col-md-3">
             <a href="{% url 'arizali_cihaz_listesi' %}" class="text-decoration-none">
-                <div class="card text-white bg-danger shadow-sm h-100 transition-hover">
+                <div class="card stat-card bg-danger text-white shadow-sm p-3 h-100">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-0">Arızalı Cihaz</h6>
-                                <h2 class="fw-bold my-2">{{ arizali_cihazlar }}</h2>
-                            </div>
-                            <i class="bi bi-tools fs-1 opacity-50"></i>
-                        </div>
+                        <h6 class="text-uppercase small opacity-75 fw-bold">Arızalı Cihazlar</h6>
+                        <h2 class="fw-bold mb-0 display-5">{{ arizali_cihazlar }}</h2>
+                        <i class="bi bi-tools stat-icon"></i>
                     </div>
                 </div>
             </a>
@@ -62,72 +107,72 @@
 
         <div class="col-md-3">
             <a href="{% url 'ogrenci_listesi' %}" class="text-decoration-none">
-                <div class="card text-white bg-success shadow-sm h-100 transition-hover">
+                <div class="card stat-card bg-success text-white shadow-sm p-3 h-100">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-0">Kayıtlı Öğrenci</h6>
-                                <h2 class="fw-bold my-2">{{ toplam_kullanici }}</h2>
-                            </div>
-                            <i class="bi bi-people-fill fs-1 opacity-50"></i>
-                        </div>
+                        <h6 class="text-uppercase small opacity-75 fw-bold">Aktif Öğrenciler</h6>
+                        <h2 class="fw-bold mb-0 display-5">{{ toplam_kullanici }}</h2>
+                        <i class="bi bi-people-fill stat-icon"></i>
                     </div>
                 </div>
             </a>
         </div>
     </div>
 
-    <style>
-        .transition-hover:hover {
-            transform: translateY(-5px);
-            transition: transform 0.2s;
-            opacity: 0.9;
-            cursor: pointer;
-        }
-    </style>
-
-    <div class="row">
-        <div class="col-md-6 mb-4">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-header bg-white fw-bold">
-                    📈 Laboratuvar Kullanım Oranları
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card panel-card h-100 shadow-sm">
+                <div class="card-header bg-transparent py-3 border-0 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold text-dark mb-0"><i class="bi bi-graph-up-arrow me-2 text-primary"></i>Kullanım Analizi</h5>
+                    <span class="badge bg-primary-subtle text-primary">Laboratuvar Bazlı</span>
                 </div>
                 <div class="card-body">
-                    <canvas id="labGrafigi"></canvas>
+                    <div style="height: 350px;">
+                        <canvas id="labGrafigi"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-6 mb-4" id="bekleyenlerListesi">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-header bg-white fw-bold text-danger">
-                    ⏳ Onay Bekleyen Randevular
+        <div class="col-lg-5">
+            <div class="card panel-card h-100 shadow-sm">
+                <div class="card-header bg-transparent py-3 border-0 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold text-danger mb-0"><i class="bi bi-bell-fill me-2 shake-icon"></i>Hızlı Onay Listesi</h5>
+                    <a href="{% url 'tum_randevular' %}" class="small text-decoration-none">Hepsini Gör</a>
                 </div>
-                <div class="card-body p-0">
+                <div class="card-body px-4">
                     {% if bekleyen_randevular %}
                     <div class="list-group list-group-flush">
                         {% for randevu in bekleyen_randevular %}
-                        <div class="list-group-item d-flex justify-content-between align-items-center">
-                            <div>
-                                <strong>{{ randevu.kullanici.first_name }} {{ randevu.kullanici.last_name }}</strong>
-                                <br>
-                                <small class="text-muted">
-                                    {{ randevu.cihaz.isim }} - {{ randevu.tarih|date:"d M" }}
-                                </small>
+                        <div class="list-group-item d-flex justify-content-between align-items-center p-3 shadow-sm border border-light">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-primary-subtle text-primary rounded-circle p-2 me-3">
+                                    <i class="bi bi-person-fill fs-5"></i>
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-0 text-dark">{{ randevu.kullanici.get_full_name|default:randevu.kullanici.username }}</h6>
+                                    <small class="text-muted">{{ randevu.cihaz.isim }} | {{ randevu.tarih|date:"d M" }}</small>
+                                </div>
                             </div>
-                            <div>
-                                <a href="{% url 'durum_guncelle' randevu.id 'onaylandi' %}"
-                                    class="btn btn-sm btn-success" title="Onayla"><i class="bi bi-check-lg"></i></a>
-                                <a href="{% url 'durum_guncelle' randevu.id 'reddedildi' %}"
-                                    class="btn btn-sm btn-danger" title="Reddet"><i class="bi bi-x-lg"></i></a>
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'durum_guncelle' randevu.id 'onaylandi' %}" 
+                                   class="action-btn btn-success shadow-sm" title="Hızlı Onayla">
+                                    <i class="bi bi-check-lg"></i>
+                                </a>
+                                <a href="{% url 'durum_guncelle' randevu.id 'reddedildi' %}" 
+                                   class="action-btn btn-outline-danger border-0" title="Hızlı Reddet">
+                                    <i class="bi bi-x-lg"></i>
+                                </a>
                             </div>
                         </div>
                         {% endfor %}
                     </div>
                     {% else %}
-                    <div class="d-flex flex-column align-items-center justify-content-center h-100 py-5 text-muted">
-                        <i class="bi bi-check-circle fs-1 mb-2 text-success opacity-50"></i>
-                        <p class="mb-0">Bekleyen işlem yok, her şey yolunda!</p>
+                    <div class="text-center py-5">
+                        <div class="bg-success-subtle text-success rounded-circle d-inline-flex p-4 mb-3">
+                            <i class="bi bi-check-all fs-1"></i>
+                        </div>
+                        <h6 class="fw-bold">Bekleyen Talebiniz Yok</h6>
+                        <p class="text-muted small">Tüm randevular güncel.</p>
                     </div>
                     {% endif %}
                 </div>
@@ -142,32 +187,42 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        // Artık temiz veri gelecek, karakter hatası olmayacak
         const labIsimleri = JSON.parse(document.getElementById('labIsimleriData').textContent);
         const randevuSayilari = JSON.parse(document.getElementById('randevuSayilariData').textContent);
 
-        const ctx = document.getElementById('labGrafigi');
-        if (ctx) {
-            new Chart(ctx.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: labIsimleri,
-                    datasets: [{
-                        label: 'Randevu Sayısı',
-                        data: randevuSayilari,
-                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 1
-                    }]
+        const ctx = document.getElementById('labGrafigi').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labIsimleri,
+                datasets: [{
+                    label: 'Toplam Rezervasyon Sayısı',
+                    data: randevuSayilari,
+                    backgroundColor: 'rgba(0, 168, 204, 0.7)',
+                    borderColor: '#003366',
+                    borderWidth: 2,
+                    borderRadius: 10,
+                    hoverBackgroundColor: '#00a8cc'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
                 },
-                options: {
-                    responsive: true,
-                    scales: {
-                        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { drawBorder: false, color: '#f0f0f0' },
+                        ticks: { stepSize: 1, font: { weight: 'bold' } }
+                    },
+                    x: {
+                        grid: { display: false }
                     }
                 }
-            });
-        }
+            }
+        });
     });
 </script>
 {% endblock %}

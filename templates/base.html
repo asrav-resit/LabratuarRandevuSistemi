@@ -5,40 +5,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Okul Lab Sistemi</title>
+    <title>BTÜ | Okul Lab Sistemi</title>
     <link rel="shortcut icon" href="{% static 'vendor/adminlte/img/AdminLTELogo.png' %}" />
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 
     <style>
-        /* Sayfanın tamamını kapsasın ki footer en alta yapışsın */
+        .developer-btn {
+        background-color: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(0, 168, 204, 0.3);
+        color: white !important;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+
+    .developer-btn:hover {
+        background-color: rgba(0, 168, 204, 0.15);
+        border-color: var(--btu-accent);
+        box-shadow: 0 0 15px rgba(0, 168, 204, 0.4) !important;
+        transform: translateY(-2px);
+    }
+
+    /* Roket İkonu Animasyonu */
+    .animate-rocket {
+        display: inline-block;
+        transition: transform 0.3s ease;
+    }
+
+    .developer-btn:hover .animate-rocket {
+        transform: translate(3px, -3px) scale(1.2);
+        color: #fff !important;
+    }
+        :root {
+            --btu-dark: #003366;
+            --btu-primary: #0056b3;
+            --btu-accent: #00a8cc;
+            --btu-light: #f8fbff;
+            --btu-logout: #ff4d4d;
+        }
+
         body {
+            font-family: 'Inter', sans-serif;
             display: flex;
             flex-direction: column;
             min-height: 100vh;
+            background-color: var(--btu-light);
+            color: #333;
         }
 
-        main {
-            flex: 1;
-            /* İçerik alanı büyüyebildiği kadar büyüsün */
+        .navbar {
+            background: linear-gradient(135deg, var(--btu-dark) 0%, var(--btu-primary) 100%);
+            border-bottom: 4px solid var(--btu-accent);
+            padding: 0.7rem 0;
         }
+
+        .home-link {
+            font-size: 1.4rem;
+            color: white !important;
+            margin-right: 1.2rem;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+        }
+
+        .home-link:hover {
+            color: var(--btu-accent) !important;
+            transform: scale(1.2) rotate(-5deg);
+        }
+
+        .nav-profile-container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 6px 18px;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            text-decoration: none !important;
+        }
+
+        .nav-profile-container:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: var(--btu-accent);
+            box-shadow: 0 0 15px rgba(0, 168, 204, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .nav-profile-img {
+            border: 2px solid var(--btu-accent);
+            box-shadow: 0 0 8px rgba(0, 168, 204, 0.5);
+        }
+
+        .nav-profile-name {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: white !important;
+        }
+
+        .logout-btn {
+            color: var(--btu-logout) !important;
+            font-size: 1.5rem;
+            background: none;
+            border: none;
+            padding: 0 10px;
+            transition: all 0.3s ease;
+            filter: drop-shadow(0 0 2px rgba(255, 77, 77, 0.3));
+        }
+
+        .logout-btn:hover {
+            transform: rotate(90deg) scale(1.2);
+            color: #ff1a1a !important;
+            filter: drop-shadow(0 0 10px rgba(255, 77, 77, 0.9));
+        }
+
+        main { flex: 1; }
 
         footer {
-            margin-top: auto;
-            /* Footer'ı en alta it */
+            background-color: var(--btu-dark);
+            border-top: 4px solid var(--btu-accent);
+            padding: 2rem 0;
+            color: white;
+        }
+
+        .footer-logo-text {
+            color: var(--btu-accent);
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+        }
+
+        .alert {
+            border: none;
+            border-radius: 12px;
+            border-left: 6px solid;
+        }
+
+        /* Sorun Bildir Butonu Tasarımı */
+        .report-issue-btn {
+            font-size: 0.75rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s;
+        }
+        .report-issue-btn:hover {
+            background-color: var(--btu-logout);
+            border-color: var(--btu-logout);
+            color: white !important;
+            transform: scale(1.05);
         }
     </style>
 </head>
 
-<body class="bg-light">
+<body>
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+    <nav class="navbar navbar-expand-lg navbar-dark shadow-lg sticky-top">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="{% url 'anasayfa' %}">
-                <i class="bi bi-mortarboard-fill"></i> Okul LabSistemi
-            </a>
+            <div class="d-flex align-items-center">
+                <a class="home-link" href="{% url 'anasayfa' %}" title="Ana Sayfa">
+                    <i class="bi bi-house-door-fill"></i>
+                </a>
+                <a class="navbar-brand fw-bold d-flex align-items-center" href="{% url 'anasayfa' %}">
+                    <i class="bi bi-mortarboard-fill me-2 text-info"></i>
+                    <span>BTÜ <span class="fw-light d-none d-sm-inline">LabSistemi</span></span>
+                </a>
+            </div>
 
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
@@ -46,55 +177,49 @@
                 <ul class="navbar-nav ms-auto align-items-center">
 
                     {% if user.is_authenticated %}
-
-                    <li class="nav-item">
-                        <a href="{% url 'randevularim' %}"
-                            class="nav-link text-white fw-bold me-2 d-flex align-items-center">
-
+                    <li class="nav-item me-4">
+                        <a href="{% url 'randevularim' %}" class="nav-link nav-profile-container d-flex align-items-center">
                             {% if user.profil.resim %}
                             <img src="{{ user.profil.resim.url }}" alt="Profil"
-                                class="rounded-circle border border-2 border-white me-2"
-                                style="width: 32px; height: 32px; object-fit: cover;">
+                                class="rounded-circle nav-profile-img me-2"
+                                style="width: 38px; height: 38px; object-fit: cover;">
                             {% else %}
-                            <i class="bi bi-person-circle me-2" style="font-size: 1.2rem;"></i>
+                            <div class="rounded-circle bg-info d-flex align-items-center justify-content-center me-2 shadow-sm" style="width: 38px; height: 38px;">
+                                <i class="bi bi-person-fill text-white fs-5"></i>
+                            </div>
                             {% endif %}
-
-                            {{ user.username }}
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a href="{% url 'randevularim' %}" class="btn btn-sm btn-light text-primary fw-bold me-2">
-                            Randevularım
+                            <div class="d-flex flex-column">
+                                <span class="nav-profile-name lh-1">{{ user.username }}</span>
+                                <small style="font-size: 0.6rem; color: var(--btu-accent); font-weight: bold;">HESAP & RANDEVULAR</small>
+                            </div>
                         </a>
                     </li>
 
                     {% if user.is_staff %}
                     <li class="nav-item">
                         <a href="{% url 'egitmen_paneli' %}"
-                            class="btn btn-sm btn-danger text-white fw-bold me-2 shadow-sm">
-                            <i class="bi bi-speedometer2"></i> Yönetim Paneli
+                            class="btn btn-sm btn-info text-white fw-bold me-4 rounded-pill shadow-sm px-3">
+                            <i class="bi bi-shield-lock-fill me-1"></i> YÖNETİM
                         </a>
                     </li>
                     {% endif %}
+                    
                     <li class="nav-item">
-                        <form action="{% url 'cikis' %}" method="post" style="display:inline;">
+                        <form action="{% url 'cikis' %}" method="post" id="logout-form" style="display:inline;">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-sm btn-outline-light">
-                                <i class="bi bi-box-arrow-right"></i> Çıkış
+                            <button type="submit" class="logout-btn" title="Güvenli Çıkış">
+                                <i class="bi bi-power"></i>
                             </button>
                         </form>
                     </li>
 
                     {% else %}
-
                     <li class="nav-item">
-                        <a href="{% url 'giris' %}" class="btn btn-sm btn-light me-2">Giriş Yap</a>
+                        <a href="{% url 'giris' %}" class="btn btn-sm px-4 me-2 rounded-pill text-white fw-bold border border-white-50">Giriş Yap</a>
                     </li>
                     <li class="nav-item">
-                        <a href="{% url 'kayit' %}" class="btn btn-sm btn-outline-light">Kayıt Ol</a>
+                        <a href="{% url 'kayit' %}" class="btn btn-sm btn-info text-white px-4 rounded-pill shadow-sm fw-bold">Kayıt Ol</a>
                     </li>
-
                     {% endif %}
                 </ul>
             </div>
@@ -102,32 +227,77 @@
     </nav>
 
     <main class="container mt-4 mb-5">
-
         {% if messages %}
-        {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="row justify-content-center">
+            <div class="col-md-11">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm mb-4">
+                    <i class="bi {% if message.tags == 'success' %}bi-check-circle-fill{% else %}bi-exclamation-triangle-fill{% endif %} me-2"></i>
+                    <span class="fw-medium">{{ message }}</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            </div>
         </div>
-        {% endfor %}
         {% endif %}
 
         {% block icerik %}
         {% endblock %}
-
     </main>
 
-    <footer class="bg-dark text-white text-center py-3 mt-4">
+    <footer class="mt-auto">
+        <div class="container text-center mb-3">
+            <button type="button" class="btn btn-sm text-white-50 report-issue-btn rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#sorunBildirModal">
+                <i class="bi bi-bug me-1"></i> Sistemsel Sorun Bildir
+            </button>
+        </div>
         <div class="container">
-            <small>&copy; 2025 Okul Laboratuvar Rezervasyon Sistemi. Tüm hakları saklıdır.</small> <br>
-            <small class="text-secondary">Geliştiren: <strong>Senin Adın</strong> 🚀</small>
+            <div class="row align-items-center">
+                <div class="col-md-6 text-center text-md-start">
+                    <p class="footer-logo-text mb-1">Bursa Teknik Üniversitesi</p>
+                    <small class="opacity-50">&copy; 2026 Laboratuvar Rezervasyon Sistemi. Tüm hakları saklıdır.</small>
+                </div>
+          <div class="col-md-6 text-center text-md-end mt-3 mt-md-0">
+    <small class="text-white-50 d-block mb-1">Sistem Geliştiricisi</small>
+    <a href="https://linkedin.com/in/reşit-asrav-94510b232" target="_blank" class="btn btn-sm developer-btn rounded-pill px-3 py-1 shadow-sm">
+        <span class="fw-bold fs-6 me-1">Reşit ASRAV</span>
+        <i class="bi bi-rocket-takeoff text-info animate-rocket"></i>
+    </a>
+</div>
+            </div>
         </div>
     </footer>
+
+    <div class="modal fade" id="sorunBildirModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+                <div class="modal-header bg-dark text-white" style="border-radius: 20px 20px 0 0; border-bottom: 3px solid var(--btu-accent);">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-megaphone me-2"></i>Yöneticiye Sorun Bildir</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                </div>
+                <form action="{% url 'ariza_bildir_genel' %}" method="POST">
+                    {% csrf_token %}
+                    <div class="modal-body p-4">
+                        <div class="alert alert-info py-2 small">
+                            Karşılaştığınız hataları veya sistemdeki aksaklıkları buradan iletebilirsiniz.
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small">Mesajınız</label>
+                            <textarea name="aciklama" class="form-control" rows="4" placeholder="Hata detaylarını buraya yazınız..." required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-modal="modal">Vazgeç</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 shadow-sm" style="background-color: var(--btu-dark);">Gönder</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        // Küçük yardımcı: CSRF token'ı JS ile almak için (AJAX isteklerinde kullanılabilir)
         function getCookie(name) {
             let cookieValue = null;
             if (document.cookie && document.cookie !== '') {
@@ -145,5 +315,4 @@
         window.CSRF_TOKEN = getCookie('csrftoken');
     </script>
 </body>
-
 </html>

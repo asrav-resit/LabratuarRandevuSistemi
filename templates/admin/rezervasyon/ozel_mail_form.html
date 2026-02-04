@@ -1,0 +1,15 @@
+{% extends 'admin/base_site.html' %}
+
+{% block content %}
+<h1>📧 Özel Mail Gönder — {{ repr }}</h1>
+<p>Alıcı sayısı: <strong>{{ recipient_count }}</strong>{% if missing_count %} — e-posta adresi eksik: <strong>{{ missing_count }}</strong>{% endif %}</p>
+<form method="post">{% csrf_token %}
+  <table>
+    {{ form.as_table }}
+  </table>
+  <div style="margin-top:10px;">
+    <button type="submit" class="default">Gönder</button>
+    <a href=".." class="button">İptal</a>
+  </div>
+</form>
+{% endblock %}

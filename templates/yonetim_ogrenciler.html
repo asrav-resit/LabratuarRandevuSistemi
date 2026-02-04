@@ -1,31 +1,142 @@
 {% extends 'base.html' %}
-{# Template: Yönetici -> Öğrenci listesi
-   View: `rezervasyon.views.ogrenci_listesi`
-   Beklenen context: 'ogrenciler'
-#}
+{% load static %}
+
 {% block icerik %}
-<div class="container mt-4">
-    <h3>🎓 Kayıtlı Öğrenciler</h3>
-    <table class="table table-striped mt-3">
-        <thead>
-            <tr>
-                <th>Ad Soyad</th>
-                <th>Okul No</th>
-                <th>Email</th>
-                <th>Telefon</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for profil in ogrenciler %}
-            <tr>
-                <td>{{ profil.user.first_name }} {{ profil.user.last_name }}</td>
-                <td>{{ profil.okul_numarasi }}</td>
-                <td>{{ profil.user.email }}</td>
-                <td>{{ profil.telefon }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    <a href="{% url 'egitmen_paneli' %}" class="btn btn-secondary">🔙 Geri Dön</a>
+<style>
+    :root { --btu-blue: #003366; --btu-accent: #00a8cc; }
+    
+    .student-card {
+        border: none;
+        border-radius: 20px;
+        background: #ffffff;
+        box-shadow: 0 10px 30px rgba(0, 51, 102, 0.05);
+        overflow: hidden;
+    }
+
+    .table thead th {
+        background-color: var(--btu-blue);
+        color: white;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 0.5px;
+        font-weight: 700;
+        border: none;
+        padding: 18px;
+    }
+
+    .student-avatar {
+        width: 40px;
+        height: 40px;
+        object-fit: cover;
+        border-radius: 10px;
+        background-color: #f0f4f8;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 168, 204, 0.05);
+        transition: background-color 0.2s ease;
+    }
+
+    .info-pill {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--btu-blue);
+    }
+</style>
+
+<div class="container-fluid mt-2 mb-5 px-lg-5">
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-8">
+            <h2 class="fw-bold text-primary mb-0">
+                <i class="bi bi-people-fill me-2 text-info"></i>Akademik Öğrenci Listesi
+            </h2>
+            <p class="text-muted small mb-0">Sisteme kayıtlı tüm öğrencilerin iletişim ve kimlik bilgilerini buradan görebilirsiniz.</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{% url 'egitmen_paneli' %}" class="btn btn-outline-primary rounded-pill px-4 fw-bold shadow-sm mt-3 mt-md-0">
+                <i class="bi bi-arrow-left me-2"></i>Eğitmen Paneline Dön
+            </a>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white border-start border-4 border-info">
+                <div class="d-flex align-items-center">
+                    <div class="fs-1 text-info me-3"><i class="bi bi-mortarboard"></i></div>
+                    <div>
+                        <small class="text-muted d-block">Toplam Kayıtlı Öğrenci</small>
+                        <h4 class="fw-bold mb-0 text-dark">{{ ogrenciler|length }}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card student-card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Öğrenci Profili</th>
+                            <th>Okul Numarası</th>
+                            <th>E-Posta Adresi</th>
+                            <th>İletişim Hattı</th>
+                            <th class="text-center">İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for profil in ogrenciler %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center">
+                                    {% if profil.resim %}
+                                        <img src="{{ profil.resim.url }}" class="student-avatar me-3 shadow-sm">
+                                    {% else %}
+                                        <div class="student-avatar me-3 d-flex align-items-center justify-content-center bg-primary-subtle text-primary fw-bold">
+                                            {{ profil.user.first_name|first }}{{ profil.user.last_name|first }}
+                                        </div>
+                                    {% endif %}
+                                    <div>
+                                        <span class="fw-bold text-dark d-block">{{ profil.user.get_full_name }}</span>
+                                        <small class="text-muted">@{{ profil.user.username }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border px-3 py-2 rounded-pill font-monospace">
+                                    {{ profil.okul_numarasi|default:"Belirtilmemiş" }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="mailto:{{ profil.user.email }}" class="text-decoration-none text-muted small">
+                                    <i class="bi bi-envelope me-1"></i>{{ profil.user.email }}
+                                </a>
+                            </td>
+                            <td>
+                                <span class="small text-secondary">
+                                    <i class="bi bi-telephone me-1"></i>{{ profil.telefon|default:"--" }}
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-light rounded-pill px-3 border shadow-sm" onclick="window.print()">
+                                    <i class="bi bi-printer text-primary"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5">
+                                <i class="bi bi-person-exclamation display-4 text-muted opacity-25"></i>
+                                <p class="text-muted mt-3 mb-0">Henüz kayıtlı öğrenci bulunmuyor.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

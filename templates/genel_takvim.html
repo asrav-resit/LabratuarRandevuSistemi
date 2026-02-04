@@ -1,167 +1,240 @@
-<!DOCTYPE html>
-<html lang="tr">
+{% extends 'base.html' %}
+{% load static %}
 
-<!-- Template: Genel takvim (haftalık görünüm)
-     View: `rezervasyon.views.genel_takvim`
-     Beklenen context: 'haftalik_veri', 'tum_cihazlar'
--->
-<head>
-    <meta charset="UTF-8">
-    <title>Haftalık Program</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+{% block icerik %}
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
 
-    <style>
-        body {
-            background-color: #f4f6f7;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+<style>
+    :root {
+        --btu-blue: #003366;
+        --btu-accent: #00a8cc;
+    }
 
-        /* Akordeon Başlığı */
-        .accordion-button:not(.collapsed) {
-            background-color: #e8f5e9;
-            color: #2e7d32;
-            font-weight: bold;
-            box-shadow: none;
-        }
+    /* Arka Plan: Profesyonel Artı Sembolleri (Grid Pattern) */
+    body {
+        background-image: 
+            radial-gradient(circle, rgba(0, 51, 102, 0.03) 1px, transparent 1px),
+            radial-gradient(circle, rgba(0, 51, 102, 0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        background-position: 0 0, 20px 20px;
+    }
 
-        .accordion-button:focus {
-            box-shadow: none;
-            border-color: rgba(0, 0, 0, .125);
-        }
+    /* Takvim Kartı ve Konteynırı */
+    .calendar-card {
+        border: none;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 10px 40px rgba(0, 51, 102, 0.1) !important;
+    }
 
-        /* Tablo Başlıkları */
-        .cihaz-sutun {
-            min-width: 150px;
-            font-size: 0.9rem;
-            color: #555;
-            background-color: #f8f9fa;
-        }
+    #calendar {
+        min-height: 800px;
+        padding: 15px;
+        font-family: 'Inter', sans-serif;
+    }
 
-        /* DOLU KUTUSU TASARIMI */
-        .badge-dolu {
-            background-color: #ffebee;
-            /* Açık Kırmızı Arkaplan */
-            color: #c62828;
-            /* Koyu Kırmızı Yazı */
-            border: 1px solid #ffcdd2;
-            display: block;
-            padding: 8px 12px;
-            border-radius: 8px;
-            text-align: left;
-            transition: all 0.2s;
-        }
+    /* Taşma Sorununu Gideren Etkinlik Stilleri */
+    .fc-event {
+        cursor: pointer;
+        border: none !important;
+        border-radius: 6px !important;
+        margin-bottom: 2px !important;
+        transition: transform 0.2s ease;
+        border-left: 4px solid var(--btu-accent) !important;
+        background-color: rgba(0, 86, 179, 0.1) !important;
+        color: var(--btu-blue) !important;
+    }
 
-        .badge-dolu:hover {
-            background-color: #ffcdd2;
-        }
+    .fc-event:hover {
+        transform: scale(1.02);
+        z-index: 5;
+    }
 
-        /* BOŞ BUTONU TASARIMI */
-        .btn-bos {
-            background-color: white;
-            color: #2e7d32;
-            /* Yeşil Yazı */
-            border: 1px dashed #a5d6a7;
-            width: 100%;
-            padding: 6px;
-            font-size: 0.85rem;
-            border-radius: 8px;
-            transition: all 0.2s;
-        }
+    /* Hücre içi metinlerin düzgün kesilmesi */
+    .custom-event-node {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 0.8rem;
+        padding: 2px 4px;
+    }
 
-        .btn-bos:hover {
-            background-color: #e8f5e9;
-            border-color: #2e7d32;
-            font-weight: bold;
-        }
-    </style>
-</head>
+    /* Takvim Araç Çubuğu Tasarımı */
+    .fc-toolbar-title { color: var(--btu-blue); font-weight: 800 !important; }
+    .fc-button-primary {
+        background-color: var(--btu-blue) !important;
+        border: none !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+    }
+    .fc-button-primary:hover { background-color: var(--btu-accent) !important; }
+</style>
 
-<body class="bg-light">
-
-    <div class="container mt-4 mb-5">
-
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h2 class="mb-0 text-dark">📅 Haftalık Program</h2>
-                <p class="text-muted small">Günlere tıklayarak saatleri görebilirsiniz.</p>
-            </div>
-            <div>
-                <a href="{% url 'anasayfa' %}" class="btn btn-outline-secondary btn-sm">
-                    <i class="bi bi-house"></i> Ana Sayfa
-                </a>
-                <a href="{% url 'randevularim' %}" class="btn btn-primary btn-sm">
-                    <i class="bi bi-person"></i> Profilim
-                </a>
-            </div>
+<div class="container-fluid mt-2 mb-5 px-lg-5">
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-8">
+            <h2 class="fw-bold text-primary mb-1">
+                <i class="bi bi-calendar-range-fill me-2 text-info"></i>Genel Labratuvar Takvimi
+            </h2>
+            <p class="text-muted small ps-4"> saatleri görmek için etkinliğe tıklayın.</p>
         </div>
-
-        <div class="accordion shadow-sm" id="takvimAccordion">
-            {% for gun_veri in haftalik_veri %}
-            <div class="accordion-item border-0 mb-2 rounded overflow-hidden shadow-sm">
-
-                <h2 class="accordion-header" id="heading{{ forloop.counter }}">
-                    <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}" type="button"
-                        data-bs-toggle="collapse" data-bs-target="#collapse{{ forloop.counter }}">
-                        <i class="bi bi-calendar-event me-2"></i>
-                        <span class="fw-bold me-2">{{ gun_veri.tarih_obj|date:"l" }}</span>
-                        <span class="text-muted small">({{ gun_veri.tarih_obj|date:"d F Y" }})</span>
-                    </button>
-                </h2>
-
-                <div id="collapse{{ forloop.counter }}"
-                    class="accordion-collapse collapse {% if forloop.first %}show{% endif %}"
-                    data-bs-parent="#takvimAccordion">
-                    <div class="accordion-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-bordered mb-0 text-center align-middle">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 80px;" class="bg-light text-muted">Saat</th>
-                                        {% for cihaz in tum_cihazlar %}
-                                        <th class="cihaz-sutun">{{ cihaz.isim }}</th>
-                                        {% endfor %}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for saat_satiri in gun_veri.saatler_listesi %}
-                                    <tr>
-                                        <td class="fw-bold bg-light text-secondary">{{ saat_satiri.saat_etiketi }}</td>
-
-                                        {% for durum in saat_satiri.cihaz_durumlari %}
-                                        <td style="padding: 6px;">
-                                            {% if durum.randevu %}
-                                            <div class="badge-dolu">
-                                                <div class="d-flex align-items-center mb-1">
-                                                    <i class="bi bi-lock-fill me-1"></i>
-                                                    <span
-                                                        style="font-size: 0.75rem; text-transform: uppercase;">DOLU</span>
-                                                </div>
-                                                <strong style="color: #b71c1c; font-size: 0.95rem;">
-                                                    {{ durum.randevu.kullanici.username }}
-                                                </strong>
-                                            </div>
-                                            {% else %}
-                                            <a href="{% url 'randevu_al' durum.cihaz.id %}?tarih={{ gun_veri.tarih_obj|date:'Y-m-d' }}"
-                                                class="btn btn-bos text-decoration-none">
-                                                <i class="bi bi-plus-circle"></i> Seç
-                                            </a>
-                                            {% endif %}
-                                        </td>
-                                        {% endfor %}
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
+        <div class="col-md-4 text-md-end">
+            <a href="{% url 'randevularim' %}" class="btn btn-primary rounded-pill px-4 shadow-sm">
+                <i class="bi bi-person-badge me-2"></i>Randevularım
+            </a>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
+    <div class="card calendar-card">
+        <div class="card-body">
+            <div id='calendar'></div>
+        </div>
+    </div>
+</div>
 
-</html>
+{{ cihazlar_json|json_script:"cihaz-data" }}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var calendarEl = document.getElementById('calendar');
+        var devices = JSON.parse(document.getElementById('cihaz-data').textContent);
+
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'tr',
+            firstDay: 1,
+            dayMaxEvents: 4, // Bir hücrede en fazla 4 satır göster, fazlasını gizle
+            displayEventTime: false, // Hücre içindeki o taşmaya sebep olan saatleri gizler
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            buttonText: { today: 'Bugün', month: 'Ay', week: 'Hafta', day: 'Gün' },
+            events: '/api/tum-randevular/',
+            
+            // Etkinlik İçeriği Özelleştirme (Taşmayı önleyen yapı)
+            eventContent: function(arg) {
+                let icon = "⚪";
+                let status = arg.event.extendedProps.durum || "";
+                
+                if (status.includes("Onaylandı")) icon = "✅";
+                else if (status.includes("Bekliyor")) icon = "⏳";
+                else if (status.includes("Geldi")) icon = "🟦";
+                else if (status.includes("Gelmedi")) icon = "🟥";
+                else if (status.includes("İptal")) icon = "❌";
+
+                let container = document.createElement('div');
+                container.className = 'custom-event-node';
+                container.innerHTML = `<span class="event-icon">${icon}</span><span class="fw-bold">${arg.event.title}</span>`;
+                return { domNodes: [container] };
+            },
+
+            // Boş güne tıklayınca randevu sayfasına yönlendirme
+            select: function(info) {
+                var modal = new bootstrap.Modal(document.getElementById('selectModal'));
+                var deviceOptions = '<option value="">Cihaz Seçiniz...</option>';
+                devices.forEach(function(d) {
+                    deviceOptions += `<option value="${d.id}">${d.isim}</option>`;
+                });
+                document.getElementById('selectDevice').innerHTML = deviceOptions;
+                document.getElementById('selectDate').value = info.startStr;
+                modal.show();
+            },
+
+            // Etkinliğe tıklayınca saati ve detayı gösteren modal
+            eventClick: function(info) {
+                var props = info.event.extendedProps;
+                let startTime = info.event.start.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+                let endTime = info.event.end ? info.event.end.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '';
+
+                document.getElementById('mcTitle').innerText = info.event.title;
+                document.getElementById('mcSaat').innerText = `${startTime} - ${endTime}`;
+                document.getElementById('mcLab').innerText = props.lab_adi || 'BTÜ Lab';
+                document.getElementById('mcKullanici').innerText = props.kullanici;
+                document.getElementById('mcDurum').innerText = props.durum;
+                
+                var durumBadge = document.getElementById('mcDurum');
+                durumBadge.className = 'badge rounded-pill px-3 py-2'; 
+                
+                if(props.durum.includes('Onaylandı') || props.durum.includes('Geldi')) durumBadge.classList.add('bg-success');
+                else if(props.durum.includes('Bekliyor')) durumBadge.classList.add('bg-warning', 'text-dark');
+                else durumBadge.classList.add('bg-danger');
+
+                new bootstrap.Modal(document.getElementById('eventModal')).show();
+            }
+        });
+
+        calendar.render();
+    });
+
+    function randevuyaGit() {
+        var devId = document.getElementById('selectDevice').value;
+        var date = document.getElementById('selectDate').value;
+        if (!devId) { alert("Lütfen bir cihaz seçin!"); return; }
+        window.location.href = `/cihaz/${devId}/?tarih=${date}`;
+    }
+</script>
+
+<div class="modal fade" id="selectModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-primary text-white py-3">
+                <h5 class="modal-title fw-bold"><i class="bi bi-plus-circle me-2"></i>Yeni Randevu</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Cihaz Seçimi</label>
+                    <select id="selectDevice" class="form-select border-2"></select>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label fw-bold text-muted small">Tarih</label>
+                    <input id="selectDate" class="form-control bg-light border-0" readonly>
+                </div>
+            </div>
+            <div class="modal-footer border-0 p-4 pt-0">
+                <button onclick="randevuyaGit()" class="btn btn-primary btn-lg w-100 rounded-pill fw-bold">Devam Et</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="eventModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-light border-0 py-3">
+                <h5 class="modal-title fw-bold text-primary" id="mcTitle">Cihaz Detayı</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0 text-center">
+                <div class="py-4 bg-primary-subtle">
+                    <h2 id="mcSaat" class="fw-bold text-primary mb-0"></h2>
+                    <small class="text-muted">Randevu Zaman Aralığı</small>
+                </div>
+                <div class="list-group list-group-flush text-start">
+                    <div class="list-group-item d-flex justify-content-between py-3">
+                        <span class="text-muted">Laboratuvar:</span>
+                        <span id="mcLab" class="fw-bold"></span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between py-3">
+                        <span class="text-muted">Kullanıcı:</span>
+                        <span id="mcKullanici" class="fw-bold"></span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between py-3 align-items-center">
+                        <span class="text-muted">Durum:</span>
+                        <span id="mcDurum"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 p-3">
+                <button type="button" class="btn btn-secondary w-100 rounded-pill" data-bs-dismiss="modal">Kapat</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

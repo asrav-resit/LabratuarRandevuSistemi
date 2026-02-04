@@ -101,7 +101,22 @@ class Randevu(models.Model):
 
             if self.baslangic_saati >= self.bitis_saati:
                 raise ValidationError("Başlangıç saati, bitiş saatinden sonra veya aynı olamaz.")
+    def onayla(self, admin_user):
+        """Randevuyu onaylar ve admini kaydeder"""
+        self.durum = self.ONAYLANDI
+        self.onaylayan_admin = admin_user
 
+    def geldi_isaretle(self):
+        """Kullanıcının laboratuvara geldiğini kaydeder"""
+        self.durum = self.GELDI
+
+    def gelmedi_isaretle(self):
+        """Kullanıcının randevuya gelmediğini kaydeder"""
+        self.durum = self.GELMEDI
+
+    def sonradan_iptal(self):
+        """Herhangi bir aşamada randevuyu iptal/red durumuna çeker"""
+        self.durum = self.REDDEDILDI  # Veya self.IPTAL, hangisini tercih edersen
 
 # 4. Profil
 class Profil(models.Model):
@@ -120,9 +135,19 @@ class Profil(models.Model):
 
 @receiver(post_save, sender=User)
 def create_or_save_user_profile(sender, instance, created, **kwargs):
+    # Güvenli profil oluşturma / güncelleme
     if created:
         Profil.objects.create(user=instance)
-    instance.profil.save()
+        return
+
+    # Eğer oluşturulmamışsa get_or_create ile güvenli hale getir
+    profil, _ = Profil.objects.get_or_create(user=instance)
+    try:
+        profil.save()
+    except Exception:
+        # Profil kaydı sırasında nadiren bir hata çıkarsa uygulamanın
+        # tamamı etkilenmesin; loglamak daha iyi olacaktır.
+        pass
 
 
 # 5. Arıza Bildirimi

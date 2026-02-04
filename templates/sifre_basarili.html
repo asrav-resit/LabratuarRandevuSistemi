@@ -1,15 +1,103 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block icerik %}
-<div class="row justify-content-center" style="margin-top: 100px;">
-    <div class="col-md-6 text-center">
-        <div class="card shadow p-5">
-            <div style="font-size: 50px; color: green; margin-bottom: 20px;">
-                <i class="fas fa-check-circle"></i>
-            </div>
-            <h3>İşlem Başarılı!</h3>
-            <p class="lead">Şifreniz başarıyla değiştirildi.</p>
-            <a href="{% url 'giris' %}" class="btn btn-primary mt-3">Giriş Yap</a>
+<style>
+    /* BTÜ Temalı Başarı Sayfası Tasarımı */
+    :root { --btu-blue: #003366; --btu-accent: #00a8cc; --success-glow: rgba(40, 167, 69, 0.2); }
+
+    .success-container {
+        min-height: 70vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: slideUp 0.6s ease-out;
+    }
+
+    .success-card {
+        border: none;
+        border-radius: 30px;
+        background: #ffffff;
+        box-shadow: 0 20px 60px rgba(0, 51, 102, 0.08);
+        padding: 3.5rem;
+        max-width: 500px;
+        width: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* Başarı İkonu ve Animasyonu */
+    .icon-circle {
+        width: 100px;
+        height: 100px;
+        background-color: #e8f5e9;
+        color: #28a745;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 2rem;
+        font-size: 3rem;
+        box-shadow: 0 0 0 10px var(--success-glow);
+        animation: pulseCheck 2s infinite;
+    }
+
+    .btn-btu-primary {
+        background: linear-gradient(135deg, var(--btu-blue) 0%, #0056b3 100%);
+        border: none;
+        border-radius: 15px;
+        padding: 12px 30px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        transition: all 0.3s;
+    }
+
+    .btn-btu-primary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0, 51, 102, 0.2);
+        color: white;
+    }
+
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulseCheck {
+        0% { box-shadow: 0 0 0 0px var(--success-glow); }
+        70% { box-shadow: 0 0 0 20px rgba(40, 167, 69, 0); }
+        100% { box-shadow: 0 0 0 0px rgba(40, 167, 69, 0); }
+    }
+</style>
+
+<div class="container success-container">
+    <div class="success-card text-center">
+        <div class="position-absolute opacity-10" style="top: -20px; right: -20px;">
+            <i class="bi bi-shield-check display-1 text-primary"></i>
+        </div>
+
+        <div class="icon-circle shadow-sm">
+            <i class="bi bi-check-lg"></i>
+        </div>
+
+        <h2 class="fw-bold text-dark mb-3">İşlem Başarılı!</h2>
+        <p class="text-muted mb-5 lh-base">
+            Şifreniz başarıyla güncellendi. Güvenliğiniz için yeni şifrenizle tekrar giriş yapmanız gerekmektedir.
+        </p>
+
+        <div class="d-grid gap-3">
+            <a href="{% url 'giris' %}" class="btn btn-btu-primary text-white shadow-sm">
+                <i class="bi bi-box-arrow-in-right me-2"></i>Hemen Giriş Yap
+            </a>
+            <a href="{% url 'anasayfa' %}" class="btn btn-link text-decoration-none text-muted small fw-bold">
+                Ana Sayfaya Dön
+            </a>
+        </div>
+
+        <div class="mt-5 pt-3 border-top border-light">
+            <small class="text-muted" style="font-size: 0.75rem;">
+                <i class="bi bi-info-circle me-1"></i> BTÜ Bilgi İşlem Daire Başkanlığı Sistemi
+            </small>
         </div>
     </div>
 </div>

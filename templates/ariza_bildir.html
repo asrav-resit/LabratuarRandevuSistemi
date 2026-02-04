@@ -1,37 +1,118 @@
 {% extends 'base.html' %}
 
-{# Template: Arıza bildirme formu
-   View: `rezervasyon.views.ariza_bildir`
-   Beklenen context: 'form', 'cihaz'
-#}
-
 {% block icerik %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card shadow border-danger">
-            <div class="card-header bg-danger text-white">
-                <h4 class="mb-0"><i class="bi bi-exclamation-triangle-fill"></i> Arıza Bildir</h4>
-            </div>
-            <div class="card-body p-4">
-                <h5 class="card-title">{{ cihaz.isim }}</h5>
-                <p class="text-muted">{{ cihaz.lab.isim }}</p>
+<style>
+    /* Sayfa genel arka planı ve yumuşak geçişler */
+    body {
+        background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%) !important;
+    }
 
-                <div class="alert alert-warning small">
-                    <i class="bi bi-info-circle"></i>
-                    Bildirdiğiniz arıza laboratuvar sorumlusuna iletilecektir.
+    /* Kart tasarımı: Modern, gölgeli ve yuvarlatılmış */
+    .ariza-card {
+        border: none;
+        border-radius: 1.5rem;
+        overflow: hidden;
+        transition: transform 0.3s ease;
+    }
+
+    .ariza-card:hover {
+        transform: scale(1.01);
+    }
+
+    /* Başlık alanı gradyanı */
+    .ariza-header {
+        background: linear-gradient(135deg, #dc3545, #a71d2a);
+        padding: 2.5rem 1.5rem;
+    }
+
+    /* Form elemanları özelleştirmesi */
+    label {
+        font-weight: 700;
+        color: #4a5568;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    textarea.form-control {
+        border-radius: 1rem;
+        border: 2px solid #edf2f7;
+        padding: 1rem;
+        transition: all 0.2s;
+        resize: none;
+    }
+
+    textarea.form-control:focus {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.15);
+    }
+
+    /* Bildir butonu */
+    .btn-ariza {
+        background: linear-gradient(135deg, #dc3545, #bb2d3b);
+        border: none;
+        border-radius: 0.8rem;
+        padding: 0.9rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        transition: all 0.3s;
+    }
+
+    .btn-ariza:hover {
+        box-shadow: 0 8px 20px rgba(220, 53, 69, 0.3);
+        transform: translateY(-2px);
+    }
+</style>
+
+<div class="container">
+    <div class="row justify-content-center align-items-center" style="min-height: 80vh;">
+        <div class="col-md-7 col-lg-5">
+            <div class="card shadow-lg ariza-card">
+                
+                <div class="ariza-header text-center text-white">
+                    <div class="display-5 mb-2"><i class="bi bi-tools"></i></div>
+                    <h3 class="fw-bold mb-0">Teknik Arıza Bildirimi</h3>
+                    <p class="small opacity-75 mb-0">Sorunu bize iletin, hızlıca çözelim</p>
                 </div>
 
-                <form method="post">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        {{ form.aciklama.label_tag }}
-                        {{ form.aciklama }}
+                <div class="card-body p-4 p-lg-5">
+                    <div class="bg-light rounded-4 p-3 mb-4 border-start border-4 border-danger">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0 me-3">
+                                <span class="badge bg-danger p-2 rounded-3">
+                                    <i class="bi bi-cpu" style="font-size: 1.5rem;"></i>
+                                </span>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-0 text-dark">{{ cihaz.isim }}</h6>
+                                <small class="text-muted"><i class="bi bi-geo-alt-fill me-1"></i>{{ cihaz.lab.isim }}</small>
+                            </div>
+                        </div>
                     </div>
-                    <button type="submit" class="btn btn-danger w-100">
-                        Bildirimi Gönder 🚀
-                    </button>
-                    <a href="javascript:history.back()" class="btn btn-link w-100 text-secondary mt-2">İptal</a>
-                </form>
+
+                    <div class="alert alert-warning border-0 shadow-sm d-flex align-items-center mb-4" style="border-radius: 12px;">
+                        <i class="bi bi-info-circle-fill me-2 fs-5"></i>
+                        <small>Açıklamanız doğrudan laboratuvar sorumlusuna iletilecektir.</small>
+                    </div>
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        <div class="mb-4">
+                            <label><i class="bi bi-chat-left-text-fill me-2 text-danger"></i> Arıza Detayı</label>
+                            {# forms.py içindeki textarea widget'ını burada kullanıyoruz #}
+                            {{ form.aciklama }}
+                        </div>
+
+                        <button type="submit" class="btn btn-danger btn-ariza w-100 text-white shadow-sm mb-3">
+                            Bildirimi Gönder <i class="bi bi-send-check-fill ms-2"></i>
+                        </button>
+                        
+                        <div class="text-center">
+                            <a href="javascript:history.back()" class="text-decoration-none text-secondary small fw-bold">
+                                <i class="bi bi-arrow-left me-1"></i> Geri Dön
+                            </a>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

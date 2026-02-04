@@ -2,78 +2,151 @@
 {% load static %}
 
 {% block icerik %}
+<style>
+    /* BTÜ Temalı Arka Plan ve Değişkenler */
+    :root { --btu-blue: #003366; --btu-accent: #00a8cc; }
+    
+    body {
+        background-image: radial-gradient(circle, rgba(0, 51, 102, 0.03) 1px, transparent 1px);
+        background-size: 30px 30px;
+    }
+
+    /* Duyuru Kartı: Sağa Yaslı ve Modern */
+    .announcement-card {
+        border: none;
+        border-right: 5px solid var(--btu-accent); /* Sağa yaslı olduğu için sağa çizgi */
+        border-radius: 15px;
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(5px);
+        transition: all 0.3s ease;
+    }
+    .announcement-card:hover { transform: translateX(-5px); }
+
+    /* Hero Alanı: Gradyan Geçişli */
+    .hero-section {
+        background: linear-gradient(135deg, var(--btu-blue) 0%, #0056b3 100%);
+        border-radius: 24px;
+        border-bottom: 5px solid var(--btu-accent);
+    }
+
+    /* Lab Kartları */
+    .lab-card {
+        border: none;
+        border-radius: 20px;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .lab-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 25px rgba(0, 51, 102, 0.1) !important;
+    }
+</style>
 
 {% if duyurular %}
 <div class="container mt-3">
-    {% for duyuru in duyurular %}
-    <div class="alert alert-warning alert-dismissible fade show shadow-sm border-warning" role="alert">
-        <div class="d-flex align-items-center"></div>
-
-        <div class="fs-1 me-3">📢</div>
-        <div>
-            <h5 class="alert-heading fw-bold mb-1">{{ duyuru.baslik }}</h5>
-            {% if duyuru.icerik %}
-            <p class="mb-0 text-dark">{{ duyuru.icerik }}</p>
+    <div class="row">
+        <div class="col-lg-7 offset-lg-5 col-md-9 offset-md-3">
+            <div class="d-flex align-items-center mb-2 justify-content-end">
+                <h6 class="fw-bold text-muted mb-0 small">
+                    <i class="bi bi-megaphone-fill me-2 text-warning"></i>GÜNCEL AKIŞ
+                </h6>
+            </div>
+            
+            {% for duyuru in duyurular %}
+            {% if duyuru.aktif_mi %}
+            <div id="duyuru-{{ duyuru.id }}" class="alert announcement-card shadow-sm alert-dismissible fade show mb-2" role="alert" style="display: none;">
+                <div class="d-flex justify-content-end text-end">
+                    <div class="pe-4">
+                        <h6 class="fw-bold mb-1 text-dark">{{ duyuru.baslik }}</h6>
+                        <p class="mb-1 text-muted small lh-sm">{{ duyuru.icerik }}</p>
+                        <small class="text-info d-block mt-1" style="font-size: 0.7rem;">
+                            <i class="bi bi-clock-history me-1"></i> {{ duyuru.tarih|date:"d F Y | H:i" }}
+                        </small>
+                    </div>
+                    <div class="flex-shrink-0 text-warning fs-4">
+                        <i class="bi bi-info-circle-fill"></i>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" onclick="duyuruyuKapat({{ duyuru.id }})" aria-label="Kapat"></button>
+            </div>
             {% endif %}
+            {% endfor %}
         </div>
     </div>
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
 </div>
-{% endfor %}
-</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        {% for duyuru in duyurular %}
+            if (!localStorage.getItem("duyuru_kapali_{{ duyuru.id }}")) {
+                document.getElementById("duyuru-{{ duyuru.id }}").style.display = "block";
+            }
+        {% endfor %}
+    });
+
+    function duyuruyuKapat(id) {
+        localStorage.setItem("duyuru_kapali_" + id, "true");
+        var element = document.getElementById("duyuru-" + id);
+        element.style.display = 'none';
+    }
+</script>
 {% endif %}
 
-<div class="bg-primary text-white py-5 mb-5" style="background: linear-gradient(135deg, #0d6efd, #0dcaf0);">
-    <div class="container">
-        <div class="row align-items-center">
+<div class="container mt-4">
+    <a href="{% url 'genel_takvim' %}" class="btn btn-warning w-100 py-3 shadow-sm border-0 rounded-4 text-dark position-relative overflow-hidden">
+        <div class="d-flex justify-content-center align-items-center position-relative" style="z-index: 2;">
+            <i class="bi bi-calendar-week-fill fs-3 me-3 text-primary"></i>
+            <div class="text-start">
+                <span class="d-block fw-bold h5 mb-0">GENEL KAMPÜS PROGRAMI</span>
+                <small class="opacity-75">Laboratuvar doluluk oranlarını anlık takip edin</small>
+            </div>
+        </div>
+        <i class="bi bi-plus-lg position-absolute opacity-10" style="right: 10px; bottom: -10px; font-size: 5rem;"></i>
+    </a>
+</div>
+
+<div class="container mt-4">
+    <div class="hero-section text-white p-5 shadow-lg mb-5 position-relative">
+        <div class="row align-items-center position-relative" style="z-index: 2;">
             <div class="col-md-8">
                 {% if user.is_authenticated %}
-                <h1 class="fw-bold display-5">👋 Hoş geldin, {{ user.first_name }}!</h1>
-                <p class="lead opacity-75">Laboratuvar rezervasyonlarını ve yaklaşan randevularını buradan
-                    yönetebilirsin.</p>
+                <h1 class="fw-bold display-5 mb-2">Merhaba, {{ user.first_name }}! 👋</h1>
+                <p class="lead opacity-75">Bugün hangi laboratuvarda çalışma yapmayı planlıyorsun?</p>
                 {% else %}
-                <h1 class="fw-bold display-5">🎓 Okul Laboratuvar Sistemi</h1>
-                <p class="lead opacity-75">Laboratuvar müsaitlik durumunu inceleyin ve hemen randevu alın.</p>
+                <h1 class="fw-bold display-5 mb-2">BTÜ Lab Portalı</h1>
+                <p class="lead opacity-75">Üniversitemizin teknik altyapısına buradan erişebilirsiniz.</p>
                 {% endif %}
             </div>
             <div class="col-md-4 text-end d-none d-md-block">
-                <i class="bi bi-laptop display-1 opacity-25"></i>
+                <i class="bi bi-cpu-fill display-1 opacity-25"></i>
             </div>
         </div>
     </div>
 </div>
 
 <div class="container mb-5">
-    <div class="row">
-
+    <div class="row g-4">
         <div class="col-lg-8">
-            <h4 class="mb-4 fw-bold text-secondary border-bottom pb-2">🔬 Laboratuvarlar</h4>
-
-            <div class="row">
-                {% for lab in labs %} <div class="col-md-6 mb-4">
-                    <div class="card h-100 shadow-sm border-0 hover-card">
-                        <div class="card-body">
+            <h4 class="mb-4 fw-bold text-primary d-flex align-items-center">
+                <span class="bg-primary text-white p-2 rounded-3 me-3"><i class="bi bi-flask"></i></span>
+                Aktif Laboratuvarlar
+            </h4>
+            <div class="row g-4">
+                {% for lab in labs %}
+                <div class="col-md-6">
+                    <div class="card h-100 shadow-sm lab-card border-0">
+                        <div class="card-body p-4">
                             <div class="d-flex justify-content-between mb-3">
-                                <span class="badge bg-light text-primary border border-primary">Laboratuvar</span>
-                                <i class="bi bi-pc-display fs-4 text-secondary"></i>
+                                <span class="badge bg-light text-primary border border-primary px-3 py-2 rounded-pill">Sistemde Aktif</span>
+                                <i class="bi bi-pc-display fs-4 text-info"></i>
                             </div>
-                            <h3 class="card-title fw-bold text-dark h5">{{ lab.isim }}</h3>
-                            <p class="card-text text-muted small">
-                                {{ lab.aciklama|default_if_none:"Açıklama girilmemiş."|truncatechars:80 }}
-                            </p>
+                            <h5 class="card-title fw-bold text-dark mb-2">{{ lab.isim }}</h5>
+                            <p class="card-text text-muted small lh-base">{{ lab.aciklama|truncatechars:100 }}</p>
                         </div>
-                        <div class="card-footer bg-white border-top-0 pb-3">
-                            <a href="{% url 'lab_detay' lab.id %}" class="btn btn-outline-primary w-100 stretched-link">
-                                Cihazları İncele & Randevu Al <i class="bi bi-arrow-right"></i>
+                        <div class="card-footer bg-transparent border-0 pb-4 px-4">
+                            <a href="{% url 'lab_detay' lab.id %}" class="btn btn-primary w-100 rounded-pill stretched-link fw-bold">
+                                Cihazları İncele <i class="bi bi-arrow-right-short ms-1"></i>
                             </a>
                         </div>
-                    </div>
-                </div>
-                {% empty %}
-                <div class="col-12">
-                    <div class="alert alert-info text-center py-5">
-                        <i class="bi bi-info-circle fs-1 d-block mb-3"></i>
-                        <h4>Henüz sisteme kayıtlı bir laboratuvar yok.</h4>
                     </div>
                 </div>
                 {% endfor %}
@@ -81,95 +154,56 @@
         </div>
 
         <div class="col-lg-4">
-
             {% if user.is_authenticated %}
-
-            <div class="card shadow-sm border-0 mb-4 bg-light">
-                <div class="card-body">
-                    <h6 class="text-uppercase text-muted small fw-bold mb-3">Hesap Özeti</h6>
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span>📅 Aktif Randevular</span>
-                        <span class="badge bg-primary rounded-pill">{{ aktif_randevu_sayisi|default:"0" }}</span>
+            <div class="card shadow-sm border-0 mb-4 rounded-4 bg-white">
+                <div class="card-body p-4">
+                    <h6 class="text-uppercase text-muted small fw-bold mb-3 border-bottom pb-2">HESAP ÖZETİ</h6>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="text-dark"><i class="bi bi-calendar-event me-2 text-primary"></i>Bekleyen Randevu</span>
+                        <span class="badge bg-primary rounded-pill px-3">{{ aktif_randevu_sayisi|default:"0" }}</span>
                     </div>
-                    <div class="d-grid mt-3">
-                        <a href="{% url 'randevularim' %}" class="btn btn-primary btn-sm">
-                            <i class="bi bi-list-check"></i> Tüm Randevularım
-                        </a>
-                    </div>
+                    <a href="{% url 'randevularim' %}" class="btn btn-outline-primary btn-sm w-100 rounded-pill">Tüm Programım</a>
                 </div>
             </div>
-
+            
             {% if siradaki_randevu %}
-            <div class="card shadow border-0 mb-4 border-start border-5 border-success">
-                <div class="card-header bg-white fw-bold text-success d-flex justify-content-between">
-                    <span>🚀 Sıradaki Randevun</span>
-                    <i class="bi bi-clock-history"></i>
-                </div>
-                <div class="card-body">
-                    <h5 class="card-title fw-bold text-dark">{{ siradaki_randevu.cihaz.isim }}</h5>
-                    <p class="card-text text-muted mb-1 small">{{ siradaki_randevu.cihaz.lab.isim }}</p>
-                    <hr>
+            <div class="card shadow border-0 mb-4 border-start border-5 border-success rounded-4" style="background: #fdfdfd;">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold text-success small mb-3 uppercase"><i class="bi bi-lightning-charge-fill me-1"></i> SIRADAKİ İŞLEM</h6>
+                    <h5 class="fw-bold text-dark mb-1">{{ siradaki_randevu.cihaz.isim }}</h5>
+                    <p class="text-muted small mb-3">{{ siradaki_randevu.cihaz.lab.isim }}</p>
                     <div class="d-flex justify-content-between align-items-center">
-                        <span class="fw-bold fs-5">{{ siradaki_randevu.tarih|date:"d M" }}</span>
-                        <span class="badge bg-success">{{ siradaki_randevu.baslangic_saati }}</span>
+                        <span class="badge bg-success-subtle text-success px-3">{{ siradaki_randevu.tarih|date:"d M" }}</span>
+                        <span class="badge bg-dark px-3">{{ siradaki_randevu.baslangic_saati }}</span>
                     </div>
-                </div>
-            </div>
-            {% else %}
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-body text-center text-muted py-4">
-                    <i class="bi bi-calendar-x fs-3 mb-2 d-block"></i>
-                    <p class="mb-2">Yaklaşan randevun yok.</p>
-                    <a href="{% url 'genel_takvim' %}" class="btn btn-sm btn-outline-secondary">Takvime Göz At</a>
                 </div>
             </div>
             {% endif %}
 
             {% if user.is_staff %}
-            <div class="card shadow-sm border-0 mb-4 border-start border-5 border-danger">
-                <div class="card-body">
-                    <h6 class="fw-bold text-danger mb-2">🛠 Eğitmen Yönetimi</h6>
-                    <p class="small text-muted mb-3">Onay bekleyen randevular ve arıza bildirimleri.</p>
-                    <a href="{% url 'egitmen_paneli' %}" class="btn btn-danger w-100">
-                        <i class="bi bi-speedometer2"></i> Yönetim Paneline Git
-                    </a>
+            <div class="card shadow-sm border-0 mb-4 border-top border-5 border-danger rounded-4">
+                <div class="card-body p-4 text-center">
+                    <i class="bi bi-speedometer2 text-danger display-6 mb-2 d-block"></i>
+                    <h6 class="fw-bold text-danger mb-3">Eğitmen Yönetim Merkezi</h6>
+                    <a href="{% url 'egitmen_paneli' %}" class="btn btn-danger w-100 rounded-pill shadow-sm">Yönetime Geç</a>
                 </div>
             </div>
             {% endif %}
 
             {% else %}
-            <div class="card shadow-sm border-0 bg-light mb-4">
-                <div class="card-body text-center py-4">
-                    <i class="bi bi-person-circle fs-1 text-secondary mb-3"></i>
-                    <h5>Sisteme Giriş Yapın</h5>
-                    <p class="text-muted small">Randevu alabilmek için lütfen giriş yapın veya kayıt olun.</p>
-                    <div class="d-grid gap-2">
-                        <a href="{% url 'giris' %}" class="btn btn-primary">Giriş Yap</a>
-                        <a href="{% url 'kayit' %}" class="btn btn-outline-dark">Kayıt Ol</a>
-                    </div>
+            <div class="card shadow-sm border-0 bg-white text-center p-5 rounded-4">
+                <div class="bg-light rounded-circle d-inline-flex p-4 mb-3 mx-auto">
+                    <i class="bi bi-person-lock fs-1 text-primary"></i>
+                </div>
+                <h5 class="fw-bold">Giriş Gerekli</h5>
+                <p class="text-muted small">Randevu oluşturmak için lütfen BTÜ hesabınızla giriş yapın.</p>
+                <div class="d-grid gap-2 mt-4">
+                    <a href="{% url 'giris' %}" class="btn btn-primary rounded-pill py-2 fw-bold">Giriş Yap</a>
+                    <a href="{% url 'kayit' %}" class="btn btn-outline-dark rounded-pill py-2">Kayıt Ol</a>
                 </div>
             </div>
             {% endif %}
-
-            <div class="d-grid mt-2">
-                <a href="{% url 'genel_takvim' %}" class="btn btn-warning py-3 fw-bold text-dark shadow-sm hover-card">
-                    <i class="bi bi-calendar-week me-2"></i> Genel Haftalık Program
-                </a>
-            </div>
-
         </div>
     </div>
 </div>
-
-<style>
-    .hover-card {
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .hover-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15) !important;
-    }
-</style>
-
 {% endblock %}

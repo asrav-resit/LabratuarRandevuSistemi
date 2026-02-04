@@ -1,135 +1,149 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{# Template: Kullanıcının randevularını listeler
-   View: `rezervasyon.views.randevularim`
-   Beklenen context: 'aktif_randevular', 'gecmis_randevular'
-#}
-
 {% block icerik %}
-<div class="container mt-4 mb-5">
+<style>
+    /* Kurumsal Renk ve Tasarım Değişkenleri */
+    :root { --btu-blue: #003366; --btu-accent: #00a8cc; --btu-bg: #f8fbff; }
+    
+    body { background-color: var(--btu-bg); }
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="text-primary fw-bold">Hesap Yönetimi</h2>
+    /* Profil Kartı Modernizasyonu */
+    .profile-card {
+        border: none;
+        border-radius: 24px;
+        background: #ffffff;
+        box-shadow: 0 10px 30px rgba(0, 51, 102, 0.05);
+    }
+
+    .profile-img-glow {
+        border: 6px solid #fff;
+        box-shadow: 0 0 20px rgba(0, 168, 204, 0.2);
+    }
+
+    /* Durum Badge'leri (Hap Tasarım) */
+    .badge-pill-custom {
+        border-radius: 50px;
+        padding: 6px 16px;
+        font-weight: 600;
+        font-size: 0.75rem;
+    }
+
+    /* Tablo ve Kart Başlıkları */
+    .section-header {
+        border-left: 5px solid var(--btu-accent);
+        padding-left: 15px;
+        margin-bottom: 20px;
+    }
+
+    /* Buton Tasarımları */
+    .btn-custom {
+        border-radius: 12px;
+        font-weight: 700;
+        transition: all 0.3s;
+    }
+    .btn-custom:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+</style>
+
+<div class="container mt-2 mb-5">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-5 gap-3">
         <div>
-            <a href="{% url 'randevu_pdf_indir' %}" class="btn btn-danger me-2">
-                <i class="bi bi-file-earmark-pdf-fill"></i> Döküm İndir (PDF)
+            <h2 class="text-primary fw-bold mb-0">Hesap Yönetimi</h2>
+            <p class="text-muted small mb-0">Profilinizi yönetin ve randevularınızı takip edin.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'randevu_pdf_indir' %}" class="btn btn-danger btn-custom shadow-sm px-4">
+                <i class="bi bi-file-earmark-pdf-fill me-2"></i>PDF Raporu
             </a>
-
-            <a href="{% url 'anasayfa' %}" class="btn btn-outline-secondary me-2">🏠 Ana Sayfa</a>
-            <a href="{% url 'genel_takvim' %}" class="btn btn-warning">📅 Haftalık Program</a>
+            <a href="{% url 'genel_takvim' %}" class="btn btn-warning btn-custom shadow-sm px-4 text-dark">
+                <i class="bi bi-calendar-event-fill me-2"></i>Yeni Randevu
+            </a>
         </div>
     </div>
 
-    <div class="row">
-
-        <div class="col-md-4 mb-4">
-            <div class="card shadow border-0">
-                <div class="card-body text-center pt-5 pb-4">
-
-                    <div class="mb-3">
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card profile-card h-100 p-4">
+                <div class="text-center">
+                    <div class="position-relative d-inline-block mb-4">
                         {% if user.profil.resim %}
-                        <img src="{{ user.profil.resim.url }}" class="rounded-circle shadow-sm"
-                            style="width: 150px; height: 150px; object-fit: cover; border: 5px solid #f8f9fa;">
+                        <img src="{{ user.profil.resim.url }}" class="rounded-circle profile-img-glow"
+                             style="width: 130px; height: 130px; object-fit: cover;">
                         {% else %}
-                        <div style="font-size: 80px; color: #ccc;">👤</div>
+                        <div class="bg-primary-subtle rounded-circle d-flex align-items-center justify-content-center mx-auto" 
+                             style="width: 130px; height: 130px; font-size: 50px; color: var(--btu-blue);">
+                             {{ user.first_name|first }}{{ user.last_name|first }}
+                        </div>
                         {% endif %}
                     </div>
-                    <h4 class="fw-bold">{{ user.first_name }} {{ user.last_name }}</h4>
-                    <p class="text-muted">@{{ user.username }}</p>
+                    <h4 class="fw-bold text-dark mb-1">{{ user.first_name }} {{ user.last_name }}</h4>
+                    <span class="badge bg-light text-muted border px-3 mb-4">@{{ user.username }}</span>
+                </div>
 
-                    <hr>
-
-                    <div class="text-start px-3">
-                        <p class="mb-2"><strong>📧 E-Posta:</strong> <br> {{ user.email|default:"Belirtilmemiş" }}</p>
-
-                        <p class="mb-2"><strong>🎓 Okul No:</strong> <br>
-                            {{ user.profil.okul_numarasi|default:"Kayıtlı Değil" }}
-                        </p>
-
-                        <p class="mb-2"><strong>📱 Telefon:</strong> <br>
-                            {{ user.profil.telefon|default:"Kayıtlı Değil" }}
-                        </p>
+                <div class="info-list mt-2">
+                    <div class="d-flex align-items-center mb-3 p-3 bg-light rounded-4">
+                        <i class="bi bi-envelope-at fs-4 text-primary me-3"></i>
+                        <div>
+                            <small class="text-muted d-block">E-Posta</small>
+                            <span class="fw-bold small">{{ user.email|default:"Belirtilmemiş" }}</span>
+                        </div>
                     </div>
-
-                    <div class="d-grid gap-2 mt-4">
-                        <a href="{% url 'profil_duzenle' %}" class="btn btn-primary btn-sm mb-2">
-                            ✏️ Bilgilerimi Düzenle
-                        </a>
-                        <a href="{% url 'password_change' %}" class="btn btn-outline-danger btn-sm">
-                            🔑 Şifremi Değiştir
-                        </a>
+                    <div class="d-flex align-items-center mb-3 p-3 bg-light rounded-4">
+                        <i class="bi bi-mortarboard fs-4 text-primary me-3"></i>
+                        <div>
+                            <small class="text-muted d-block">Öğrenci Numarası</small>
+                            <span class="fw-bold small">{{ user.profil.okul_numarasi|default:"Kayıtlı Değil" }}</span>
+                        </div>
                     </div>
+                </div>
+
+                <div class="mt-auto d-grid gap-2 pt-4">
+                    <a href="{% url 'profil_duzenle' %}" class="btn btn-primary btn-custom py-2">Bilgilerimi Güncelle</a>
+                    <a href="{% url 'password_change' %}" class="btn btn-outline-secondary btn-sm border-0 mt-2">Güvenlik Ayarları</a>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-8">
-
-
-            <div class="card shadow-sm mb-4 border-0 border-top border-4 border-primary">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 text-primary fw-bold">🚀 Gelecek Randevular</h5>
-                    <span class="badge bg-primary rounded-pill">{{ aktif_randevular|length }}</span>
-                </div>
+        <div class="col-lg-8">
+            <div class="section-header">
+                <h5 class="fw-bold text-primary mb-0">🚀 Yaklaşan Randevular</h5>
+            </div>
+            
+            <div class="card profile-card mb-5">
                 <div class="card-body p-0">
                     {% if aktif_randevular %}
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Cihaz</th>
-                                    <th>Tarih / Saat</th>
-                                    <th class="text-end">İşlem</th>
+                            <thead class="bg-light">
+                                <tr class="text-muted small text-uppercase">
+                                    <th class="ps-4 py-3">Cihaz / Lab</th>
+                                    <th>Zamanlama</th>
+                                    <th>Durum</th>
+                                    <th class="text-end pe-4">İşlem</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for randevu in aktif_randevular %}
                                 <tr>
-                                    <td>
-                                        <span class="fw-bold text-primary">{{ randevu.cihaz.isim }}</span> <br>
+                                    <td class="ps-4">
+                                        <span class="fw-bold text-dark d-block">{{ randevu.cihaz.isim }}</span>
                                         <small class="text-muted">{{ randevu.cihaz.lab.isim }}</small>
                                     </td>
                                     <td>
-                                        <div class="d-flex flex-column">
-                                            <span class="fw-bold">{{ randevu.tarih|date:"d M Y" }}</span>
-                                            <span class="badge bg-light text-dark border">{{ randevu.baslangic_saati }}
-                                                - {{ randevu.bitis_saati }}</span>
-                                        </div>
+                                        <span class="d-block fw-bold">{{ randevu.tarih|date:"d.m.Y" }}</span>
+                                        <small class="text-info">{{ randevu.baslangic_saati|time:"H:i" }} - {{ randevu.bitis_saati|time:"H:i" }}</small>
                                     </td>
-                                    <td class="text-end">
-                                        <button type="button" class="btn btn-sm btn-outline-danger"
-                                            data-bs-toggle="modal" data-bs-target="#iptalModal{{ randevu.id }}">
+                                    <td>
+                                        {% if randevu.durum == 'onay_bekleniyor' or randevu.durum == 'Bekliyor' %}
+                                            <span class="badge bg-warning-subtle text-warning-emphasis badge-pill-custom border border-warning">Bekliyor</span>
+                                        {% else %}
+                                            <span class="badge bg-success-subtle text-success badge-pill-custom border border-success">Onaylandı</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <button class="btn btn-outline-danger btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#iptalModal{{ randevu.id }}">
                                             İptal
                                         </button>
-
-                                        <div class="modal fade text-start" id="iptalModal{{ randevu.id }}" tabindex="-1"
-                                            aria-hidden="true">
-                                            <div class="modal-dialog">
-                                                <div class="modal-content">
-                                                    <div class="modal-header">
-                                                        <h5 class="modal-title">Randevu İptali</h5>
-                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                            aria-label="Close"></button>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                        <p><strong>{{ randevu.tarih }}</strong> tarihinde, saat
-                                                            <strong>{{ randevu.baslangic_saati }}</strong> için
-                                                            aldığınız <strong>{{ randevu.cihaz.isim }}</strong>
-                                                            randevusunu iptal etmek üzeresiniz.
-                                                        </p>
-                                                        <p class="text-danger small fw-bold">⚠️ Bu işlem geri alınamaz!
-                                                        </p>
-                                                    </div>
-                                                    <div class="modal-footer">
-                                                        <button type="button" class="btn btn-secondary btn-sm"
-                                                            data-bs-dismiss="modal">Vazgeç</button>
-                                                        <a href="{% url 'randevu_iptal' randevu.id %}"
-                                                            class="btn btn-danger btn-sm">Evet, İptal Et</a>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -138,43 +152,35 @@
                     </div>
                     {% else %}
                     <div class="text-center py-5">
-                        <p class="text-muted mb-0">Henüz yaklaşan bir randevunuz yok.</p>
-                        <a href="{% url 'genel_takvim' %}" class="btn btn-link text-decoration-none">📅 Hemen Randevu
-                            Al</a>
+                        <i class="bi bi-calendar-x display-4 text-muted opacity-25"></i>
+                        <p class="text-muted mt-3 mb-0">Aktif bir randevunuz bulunmuyor.</p>
                     </div>
                     {% endif %}
                 </div>
             </div>
 
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-light">
-                    <h6 class="mb-0 text-secondary">📂 Geçmiş Randevular</h6>
-                </div>
+            <div class="section-header">
+                <h6 class="fw-bold text-secondary mb-0">📂 Geçmiş Kayıtlar</h6>
+            </div>
+            <div class="card profile-card border-0">
                 <div class="card-body p-0">
                     {% if gecmis_randevular %}
                     <div class="table-responsive">
-                        <table class="table table-sm table-striped align-middle mb-0" style="font-size: 0.9rem;">
-                            <thead>
-                                <tr>
-                                    <th class="ps-3">Cihaz</th>
-                                    <th>Tarih</th>
-                                    <th>Durum</th>
-                                </tr>
-                            </thead>
+                        <table class="table table-sm table-striped align-middle mb-0" style="font-size: 0.85rem;">
                             <tbody>
                                 {% for randevu in gecmis_randevular %}
                                 <tr>
-                                    <td class="ps-3">{{ randevu.cihaz.isim }}</td>
-                                    <td>{{ randevu.tarih|date:"d.m.Y" }}</td>
-                                    <td>
+                                    <td class="ps-4 py-3">
+                                        <span class="text-dark fw-bold">{{ randevu.cihaz.isim }}</span>
+                                    </td>
+                                    <td class="text-muted">{{ randevu.tarih|date:"d.m.y" }}</td>
+                                    <td class="text-end pe-4">
                                         {% if randevu.durum == 'geldi' %}
-                                        <span class="badge bg-success">Katıldı</span>
-                                        {% elif randevu.durum == 'gelmedi' %}
-                                        <span class="badge bg-danger">Gelmedi</span>
-                                        {% elif randevu.durum == 'iptal' %}
-                                        <span class="badge bg-secondary">İptal Edildi</span>
+                                            <span class="text-success fw-bold"><i class="bi bi-check-circle me-1"></i>Tamamlandı</span>
+                                        {% elif randevu.durum == 'iptal_edildi' %}
+                                            <span class="text-muted small">İptal Edildi</span>
                                         {% else %}
-                                        <span class="badge bg-secondary">Tamamlandı</span>
+                                            <span class="text-danger small">Katılmadı</span>
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -183,12 +189,31 @@
                         </table>
                     </div>
                     {% else %}
-                    <div class="p-3 text-center text-muted small">Geçmiş kayıt bulunamadı.</div>
+                    <div class="p-4 text-center text-muted small">Geçmiş kayıt bulunamadı.</div>
                     {% endif %}
                 </div>
             </div>
-
         </div>
     </div>
 </div>
+
+{% for randevu in aktif_randevular %}
+<div class="modal fade" id="iptalModal{{ randevu.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-body text-center p-5">
+                <div class="bg-danger-subtle text-danger rounded-circle d-inline-flex p-4 mb-4">
+                    <i class="bi bi-exclamation-triangle fs-1"></i>
+                </div>
+                <h4 class="fw-bold mb-3">Randevu İptali</h4>
+                <p class="text-muted"><strong>{{ randevu.cihaz.isim }}</strong> için oluşturduğunuz <strong>{{ randevu.tarih }}</strong> tarihli randevuyu iptal etmek üzeresiniz.</p>
+                <div class="d-flex gap-2 justify-content-center mt-4">
+                    <button type="button" class="btn btn-light px-4 rounded-pill" data-bs-dismiss="modal">Vazgeç</button>
+                    <a href="{% url 'randevu_iptal' randevu.id %}" class="btn btn-danger px-4 rounded-pill fw-bold">Evet, İptal Et</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
 {% endblock %}

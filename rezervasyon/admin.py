@@ -1,413 +1,437 @@
-from urllib import response
+# ============================================================
+# admin.py – Laboratuvar Randevu Sistemi Yönetim Paneli
+# ============================================================
 from django.contrib import admin
+
+admin.site.site_header = "BTÜ Randevu Sistemi Yönetimi"
+admin.site.site_title = "BTÜ Randevu Paneli"
+admin.site.index_title = "Yönetim Merkezine Hoş Geldiniz"
+
+from django.contrib import admin, messages
 from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin
 from django.http import HttpResponse
+from django.shortcuts import redirect, get_object_or_404
+from django.urls import path
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
-from django.db.models import Count
-import csv
 from django.core.mail import send_mail
 from django.conf import settings
+from django.db import models
+from django.template.loader import render_to_string
+from django.core.mail import EmailMultiAlternatives
+from django.urls import reverse
+from django.shortcuts import render
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
 
-"""rezervasyon.admin
+from .forms import AdminMassEmailForm
+import csv
 
-Admin paneli için model kayıtları ve yönetim aksiyonları.
-- Excel/CSV indirme, kullanıcı yetkilendirme, cihaz durumu gösterimleri gibi
-  yardımcı fonksiyonlar burada tanımlıdır.
-- Proxy modeller (OnayBekleyenler, AktifOgrenciler) admin görünümünü sadeleştirir.
-"""
-
-# Modelleri İçe Aktar
 from .models import (
-    Laboratuvar,
-    Cihaz,
-    Randevu,
-    Profil,
-    Ariza,
-    Duyuru,
-    OnayBekleyenler,
-    AktifOgrenciler,
+    Laboratuvar, Cihaz, Randevu, Profil, Ariza, Duyuru,
+    OnayBekleyenler, AktifOgrenciler
 )
 
-# ========================================================
-# 1. ORTAK AKSİYONLAR VE FONKSİYONLAR
-# ========================================================
+# ============================================================
+# GÜVENLİ REDIRECT
+# ============================================================
 
+def safe_redirect(request, fallback=".."):
+    # Güvenli redirect: yalnızca aynı host içindeki tam URL'lere veya
+    # göreli path'lere izin ver. Dış hostlara yönlendirmeyi engelle.
+    from urllib.parse import urlparse
 
+    referer = request.META.get("HTTP_REFERER")
+    if not referer:
+        return redirect(fallback)
+
+    parsed = urlparse(referer)
+    # Eğer netloc (host) yoksa referer göreli path'tir -> güvenli
+    if not parsed.netloc:
+        return redirect(referer)
+
+    # Eğer host var ise, yalnızca aynı host içerisindeyse izin ver
+    if parsed.netloc == request.get_host():
+        return redirect(referer)
+
+    return redirect(fallback)
+
+# ============================================================
+# ORTAK ACTIONLAR
+# ============================================================
+
+@admin.action(description="📥 Excel (CSV) indir")
 def excel_indir(modeladmin, request, queryset):
     response = HttpResponse(content_type="text/csv")
-    response["Content-Disposition"] = 'attachment; filename="randevu_listesi.csv"'
-    response.write(u'\ufeff'.encode('utf8'))  # UTF-8 BOM ekle
+    response["Content-Disposition"] = 'attachment; filename="liste.csv"'
+    response.write(u'\ufeff'.encode('utf8'))
     writer = csv.writer(response, delimiter=';')
-    writer.writerow(["Kullanıcı Adı", "Laboratuvar", "Cihaz", "Tarih", "Saat", "Durum"])
-    for randevu in queryset:
-        writer.writerow(
-            [
-                randevu.kullanici.username,
-                randevu.cihaz.lab.isim,
-                randevu.cihaz.isim,
-                randevu.tarih,
-                f"{randevu.baslangic_saati} - {randevu.bitis_saati}",
-                randevu.get_durum_display(),
-            ]
-        )
+    writer.writerow(["Kullanıcı", "Cihaz", "Tarih", "Saat", "Durum"])
+    for obj in queryset:
+        user = getattr(obj, "kullanici", None)
+        if user:
+            full_name = f"{getattr(user, 'first_name', '')} {getattr(user, 'last_name', '')}".strip()
+            if not full_name:
+                full_name = getattr(user, 'username', '-')
+        else:
+            full_name = "-"
+
+        writer.writerow([
+            full_name,
+            getattr(obj, "cihaz", "-"),
+            getattr(obj, "tarih", "-"),
+            f"{getattr(obj,'baslangic_saati','')}-{getattr(obj,'bitis_saati','')}",
+            obj.get_durum_display() if hasattr(obj, "get_durum_display") else "-"
+        ])
     return response
 
-
-excel_indir.short_description = "📥 Seçilenleri Excel (CSV) Olarak İndir"
-
-# --- Kullanıcı Yetki Aksiyonları (Global Tanımlandı) ---
-
-
-@admin.action(description="👑 Seçilenleri SÜPER KULLANICI Yap")
-def super_yap(modeladmin, request, queryset):
-    sayi = queryset.update(is_superuser=True, is_staff=True)
-    modeladmin.message_user(
-        request, f"{sayi} kullanıcı başarıyla SÜPER KULLANICI yapıldı!", level="SUCCESS"
-    )
-
-
-@admin.action(description="👤 Seçilenlerin Yetkilerini AL (Normal Yap)")
-def normal_yap(modeladmin, request, queryset):
-    sayi = queryset.update(is_superuser=False, is_staff=False)
-    modeladmin.message_user(
-        request,
-        f"{sayi} kullanıcının yetkileri alındı, normal kullanıcı yapıldı.",
-        level="WARNING",
-    )
+@admin.action(description="📧 Bilgilendirme maili gönder")
+def mail_gonder(modeladmin, request, queryset):
+    sayac = 0
+    for obj in queryset:
+        user = obj.kullanici if hasattr(obj, "kullanici") else obj
+        if user.email:
+            send_mail(
+                "BTÜ Lab Bilgilendirme",
+                "Hesabınızla ilgili bir bilgilendirme bulunmaktadır.",
+                settings.DEFAULT_FROM_EMAIL, [user.email], fail_silently=True
+            )
+            sayac += 1
+    modeladmin.message_user(request, f"{sayac} kullanıcıya mail gönderildi.", messages.SUCCESS)
 
 
-@admin.action(description="⛔ Seçilenleri PASİFE AL (Giriş Yetkisini Kapat)")
-def kullanicilari_pasife_al(modeladmin, request, queryset):
-    sayi = queryset.update(is_active=False)
-    modeladmin.message_user(
-        request,
-        f"{sayi} kullanıcı pasife alındı ve giriş yetkisi kapatıldı.",
-        level="ERROR",
-    )
+@admin.action(description="📧 Özel Mail Gönder")
+def ozel_mail_action(modeladmin, request, queryset):
+    # Store selected IDs and model info in session then redirect to the admin view
+    ids = list(queryset.values_list('pk', flat=True))
+    request.session['ozel_mail_data'] = {
+        'app_label': modeladmin.model._meta.app_label,
+        'model': modeladmin.model._meta.model_name,
+        'pks': ids,
+        'repr': str(modeladmin.model._meta.verbose_name_plural)
+    }
+    # Redirect back to the changelist and then to the custom view
+    return redirect('admin:rezervasyon_ozel_mail')
 
 
-@admin.action(description="✅ Seçilen Kullanıcıları Onayla (Aktif Et)")
-def kullanicilari_onayla(modeladmin, request, queryset):
-    sayi = queryset.update(is_active=True)
-    modeladmin.message_user(
-        request, f"{sayi} kullanıcı başarıyla onaylandı ve aktif edildi."
-    )
+class AdminMassMailMixin:
+    """Mixin to add an admin view for sending custom emails to selected objects."""
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('ozel-mail/', self.admin_site.admin_view(self.ozel_mail_view), name='rezervasyon_ozel_mail'),
+        ]
+        return custom_urls + urls
 
+    def ozel_mail_view(self, request):
+        data = request.session.get('ozel_mail_data')
+        if not data:
+            messages.error(request, "Seçilmiş kullanıcı verisi bulunamadı.")
+            return redirect('..')
 
-# ========================================================
-# 2. ANA MODELLERİN ADMİN AYARLARI
-# ========================================================
+        # Load queryset for given model and PKs
+        app_label = data.get('app_label')
+        model_name = data.get('model')
+        pks = data.get('pks', [])
 
+        Model = self.model.__class__ if False else None
+        # Resolve model using apps
+        from django.apps import apps
+        Model = apps.get_model(app_label, model_name)
+        queryset = Model.objects.filter(pk__in=pks)
 
-# --- LABORATUVAR ---
+        # Collect recipient emails with robust attribute probing
+        recipients = []
+        missing_emails = []
+
+        def find_email(o):
+            # Direct email field
+            for attr in ('email',):
+                if hasattr(o, attr):
+                    val = getattr(o, attr)
+                    if val:
+                        return val
+
+            # Common relation to User
+            for rel in ('user', 'kullanici', 'owner'):
+                if hasattr(o, rel):
+                    try:
+                        u = getattr(o, rel)
+                        if u and hasattr(u, 'email') and u.email:
+                            return u.email
+                    except Exception:
+                        pass
+
+            # If object has profil relation
+            if hasattr(o, 'profil'):
+                try:
+                    p = getattr(o, 'profil')
+                    if p and hasattr(p, 'user') and p.user.email:
+                        return p.user.email
+                except Exception:
+                    pass
+
+            # Try __str__ or other fallbacks (no email)
+            return None
+
+        seen = set()
+        for obj in queryset:
+            email = find_email(obj)
+            if email:
+                try:
+                    validate_email(email)
+                except ValidationError:
+                    missing_emails.append(obj)
+                    continue
+
+                if email.lower() in seen:
+                    continue
+                seen.add(email.lower())
+                recipients.append((obj, email))
+            else:
+                missing_emails.append(obj)
+
+        if request.method == 'POST':
+            form = AdminMassEmailForm(request.POST)
+            if form.is_valid():
+                subject = form.cleaned_data['subject']
+                message = form.cleaned_data['message']
+                is_html = form.cleaned_data['is_html']
+
+                sent = 0
+                failed = 0
+                errors = []
+
+                for _obj, email in recipients:
+                    try:
+                        if is_html:
+                            text_content = message
+                            html_content = message
+                            msg = EmailMultiAlternatives(subject, text_content, settings.DEFAULT_FROM_EMAIL, [email])
+                            msg.attach_alternative(html_content, "text/html")
+                            msg.send()
+                        else:
+                            send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [email], fail_silently=False)
+                        sent += 1
+                    except Exception as e:
+                        failed += 1
+                        errors.append(f"{email}: {e}")
+
+                # Clear session for safety
+                try:
+                    del request.session['ozel_mail_data']
+                except Exception:
+                    pass
+
+                return render(request, 'admin/rezervasyon/ozel_mail_result.html', {
+                    'total': len(recipients), 'sent': sent, 'failed': failed,
+                    'missing': missing_emails, 'errors': errors
+                })
+        else:
+            form = AdminMassEmailForm()
+
+        return render(request, 'admin/rezervasyon/ozel_mail_form.html', {
+            'form': form, 'recipient_count': len(recipients), 'missing_count': len(missing_emails), 'repr': data.get('repr')
+        })
+
+@admin.action(description="🟢 Aktif yap")
+def aktif_yap(modeladmin, request, queryset):
+    queryset.update(is_active=True)
+
+@admin.action(description="🔴 Pasif yap")
+def pasif_yap(modeladmin, request, queryset):
+    queryset.update(is_active=False)
+
+# ============================================================
+# LABORATUVAR & CİHAZ (GELİŞTİRİLMİŞ)
+# ============================================================
+# ============================================================
+# LABORATUVAR & CİHAZ (HATASIZ VE ÇALIŞAN VERSİYON)
+# ============================================================
+
 @admin.register(Laboratuvar)
 class LaboratuvarAdmin(admin.ModelAdmin):
-    list_display = ("isim", "cihaz_durumu_gorsel", "aciklama_kisalt")
-    search_fields = ("isim",)
-
-    def cihaz_durumu_gorsel(self, obj):
-        from .models import Cihaz
-
-        sayi = Cihaz.objects.filter(lab=obj).count()
-        yuzde = (sayi / 20) * 100
-        if yuzde > 100:
-            yuzde = 100
-        renk = "success" if sayi > 0 else "danger"
-        return format_html(
-            """<div style="min-width: 100px;">
-                <small>{} Cihaz</small>
-                <div class="progress progress-xs">
-                    <div class="progress-bar bg-{}" style="width: {}%"></div>
-                </div></div>""",
-            sayi,
-            renk,
-            yuzde,
-        )
-
-    cihaz_durumu_gorsel.short_description = "Laboratuvar Kapasitesi"
-
-    def aciklama_kisalt(self, obj):
-        return obj.aciklama[:50] + "..." if obj.aciklama else "-"
-
-    aciklama_kisalt.short_description = "Açıklama"
-
-
-# --- CİHAZ ---
-@admin.action(description="🔴 Seçilenleri BAKIMA AL (Pasif)")
-def bakima_al(modeladmin, request, queryset):
-    queryset.update(aktif_mi=False)
-
-
-@admin.action(description="🟢 Seçilenleri HİZMETE AÇ (Aktif)")
-def hizmete_ac(modeladmin, request, queryset):
-    queryset.update(aktif_mi=True)
-
+    list_display = ("isim", "cihaz_durumu")
+    
+    def cihaz_durumu(self, obj):
+        sayi = obj.cihaz_set.count()
+        # success (yeşil) veya danger (kırmızı) badge gösterimi
+        return format_html('<span class="badge badge-{}">{} cihaz</span>', "success" if sayi else "danger", sayi)
 
 @admin.register(Cihaz)
 class CihazAdmin(admin.ModelAdmin):
-    list_display = ("isim", "lab", "durum_etiketi", "aktif_mi")
-    list_filter = ("lab", "aktif_mi")
-    search_fields = ("isim",)
-    actions = [bakima_al, hizmete_ac]
+    # HATA VEREN 'is_active' FİLTRESİ KALDIRILDI
+    list_display = ("isim", "lab", "durum")
+    list_filter = ("lab",) # Sadece laboratuvara göre filtreleme yapar
 
-    fieldsets = (
-        ("Temel Bilgiler", {"fields": ("isim", "lab")}),
-        ("Durum Ayarları", {"fields": ("aktif_mi",), "classes": ("collapse",)}),
-    )
-
-    def durum_etiketi(self, obj):
-        if not obj.aktif_mi:
-            return mark_safe('<span class="badge badge-danger">⛔ Bakımda</span>')
-
-        try:
-            ariza_var = Ariza.objects.filter(cihaz=obj, cozuldu_mu=False).exists()
-        except Exception:
-            ariza_var = False
-
+    def durum(self, obj):
+        # Arıza modelindeki aktif (çözülmemiş) kayıtları kontrol eder
+        ariza_var = Ariza.objects.filter(cihaz=obj, cozuldu_mu=False).exists()
+        
         if ariza_var:
-            return mark_safe('<span class="badge badge-warning">⚠️ Arızalı</span>')
+            return mark_safe('''
+                <span style="color:red; font-weight:bold; cursor:help;" class="animate-pulse">⚠️ ARIZALI</span>
+                <style>@keyframes pulse { 0% { opacity:1; } 50% { opacity:0.5; } 100% { opacity:1; } } .animate-pulse { animation: pulse 1.5s infinite; }</style>
+            ''')
+        
+        return mark_safe('<span style="color:green; font-weight:bold;">✅ ÇALIŞIYOR</span>')
+    
+    def get_model_perms(self, request):
+        perms = super().get_model_perms(request)
+        # Eğer çözülmemiş arıza varsa admin sayfasında uyarı gösterir
+        if Ariza.objects.filter(cozuldu_mu=False).exists(): 
+            perms["has_warning"] = True
+        return perms
+# ============================================================
+# RANDEVU – HAREKETLİ ETİKETLER
+# ============================================================
 
-        return mark_safe('<span class="badge badge-success">✅ Çalışıyor</span>')
-
-    durum_etiketi.short_description = "Anlık Durum"
-
-
-# --- RANDEVU ---
 @admin.register(Randevu)
-class RandevuAdmin(admin.ModelAdmin):
-    # 'onaylayan_admin' alanını listeye ekledik (isteğe bağlı)
-    list_display = (
-        "kullanici_badge",
-        "cihaz_bilgisi",
-        "tarih_saat",
-        "renkli_durum",
-        "onaylayan_admin",
-        "durum",
-    )
-    list_filter = ("durum", "tarih", "cihaz__lab", "onaylayan_admin")
-    search_fields = ("kullanici__username", "cihaz__isim", "onaylayan_admin__username")
-    date_hierarchy = "tarih"
-    list_editable = ("durum",)
-    readonly_fields = (
-        "onaylayan_admin",
-    )  # Manuel değiştirilmemesi için sadece okunur yaptık
-    actions = [excel_indir]
+class RandevuAdmin(AdminMassMailMixin, admin.ModelAdmin):
+    list_display = ("kullanici", "cihaz", "tarih", "durum_renkli", "butonlar")
+    list_filter = ("durum", "tarih", "cihaz__lab")
+    actions = [excel_indir, mail_gonder, ozel_mail_action]
 
-    def save_model(self, request, obj, form, change):
-        # Durum değiştiyse işlemi yapan admini kaydet
-        if change and "durum" in form.changed_data:
-            obj.onaylayan_admin = request.user  # Mevcut giriş yapan admini kaydeder
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.order_by(models.Case(models.When(durum="onay_bekleniyor", then=0), default=1, output_field=models.IntegerField()), "-tarih")
 
-            durum_mesajı = ""
-            konu = f"Laboratuvar Randevusu Hakkında - {obj.cihaz.isim}"
-            gonderilecek_mi = True
-
-            if obj.durum == "onaylandi":
-                durum_mesajı = (
-                    f"Tebrikler! {obj.tarih} tarihindeki randevunuz onaylanmıştır."
-                )
-            elif obj.durum == "reddedildi":
-                durum_mesajı = f"Üzgünüz, {obj.tarih} tarihindeki randevu talebiniz reddedilmiştir."
-            elif obj.durum == "iptal_edildi":
-                durum_mesajı = f"{obj.tarih} tarihindeki randevunuz iptal edilmiştir."
-            else:
-                gonderilecek_mi = False
-
-            if gonderilecek_mi:
-                self.message_user(
-                    request,
-                    f"📧 {obj.kullanici.username} adlı kullanıcıya '{obj.get_durum_display()}' maili gönderildi (Admin: {request.user.username}).",
-                    level="SUCCESS",
-                )
-
-                mesaj_icerigi = f"Merhaba {obj.kullanici.first_name if obj.kullanici.first_name else obj.kullanici.username},\n\n{durum_mesajı}\n\nDetaylar:\nCihaz: {obj.cihaz.isim}\nLaboratuvar: {obj.cihaz.lab.isim}\nSaat: {obj.baslangic_saati} - {obj.bitis_saati}\nİşlemi Gerçekleştiren: {request.user.get_full_name() or request.user.username}\n\nİyi çalışmalar dileriz."
-
-                try:
-                    send_mail(
-                        subject=konu,
-                        message=mesaj_icerigi,
-                        from_email=settings.DEFAULT_FROM_EMAIL,
-                        recipient_list=[obj.kullanici.email],
-                        fail_silently=True,
-                    )
-                except Exception as e:
-                    self.message_user(request, f"Mail hatası: {e}", level="ERROR")
-
-        super().save_model(request, obj, form, change)
-
-    def renkli_durum(self, obj):
-        renkler = {
-            "onay_bekleniyor": ("#ffc107", "#000", "BEKLEMEDE"),
-            "onaylandi": ("#28a745", "#fff", "ONAYLANDI"),
-            "reddedildi": ("#dc3545", "#fff", "REDDEDİLDİ"),
-            "geldi": ("#17a2b8", "#fff", "GELDİ"),
-            "gelmedi": ("#6c757d", "#fff", "GELMEDİ"),
-            "iptal_edildi": ("#343a40", "#fff", "İPTAL EDİLDİ"),
-        }
-        arka_plan, yazi, etiket = renkler.get(obj.durum, ("#e9ecef", "#000", obj.durum))
+    def durum_renkli(self, obj):
+        renk_paleti = {"onay_bekleniyor": "#ffc107", "onaylandi": "#28a745", "geldi": "#17a2b8", "gelmedi": "#6c757d", "reddedildi": "#dc3545"}
+        renk = renk_paleti.get(obj.durum, "#6c757d")
         return format_html(
-            '<span style="background-color: {}; color: {}; padding: 3px 10px; '
-            "border-radius: 12px; font-weight: bold; font-size: 10px; display: inline-block; "
-            'min-width: 80px; text-align: center; border: 1px solid rgba(0,0,0,0.1);">'
-            "{}</span>",
-            arka_plan,
-            yazi,
-            etiket,
+            '<span style="background:{}; color:white; padding:5px 12px; border-radius:20px; font-weight:bold; font-size:11px; display:inline-block; cursor:pointer; transition:all 0.3s ease;" '
+            'onmouseover="this.style.transform=\'scale(1.1)\';" onmouseout="this.style.transform=\'scale(1)\';">{}</span>',
+            renk, obj.get_durum_display()
         )
 
-    renkli_durum.short_description = "GÖRSEL DURUM"
+    def butonlar(self, obj):
+        btn = []
+        style = 'padding:4px 10px; border-radius:4px; color:white; font-size:11px; margin:2px; display:inline-block; cursor:pointer; transition:0.2s;'
+        if obj.durum == "onay_bekleniyor":
+            btn.append(format_html('<a class="button" style="background:#28a745; {}" href="onayla/{}/">Onayla</a>', style, obj.id))
+            btn.append(format_html('<a class="button" style="background:#dc3545; {}" href="iptal/{}/">Reddet</a>', style, obj.id))
+        elif obj.durum == "onaylandi":
+            btn.append(format_html('<a class="button" style="background:#17a2b8; {}" href="geldi/{}/">Geldi</a>', style, obj.id))
+            btn.append(format_html('<a class="button" style="background:#6c757d; {}" href="gelmedi/{}/">Gelmedi</a>', style, obj.id))
+        return mark_safe(" ".join(btn))
 
-    def kullanici_badge(self, obj):
-        return format_html(
-            '<span style="font-weight:bold; color:#555;"><i class="fas fa-user"></i> {}</span>',
-            obj.kullanici.username,
-        )
+    def get_urls(self):
+        urls = super().get_urls()
+        return [
+            path("onayla/<int:pk>/", self.admin_site.admin_view(self.onayla)),
+            path("iptal/<int:pk>/", self.admin_site.admin_view(self.iptal)),
+            path("geldi/<int:pk>/", self.admin_site.admin_view(self.geldi)),
+            path("gelmedi/<int:pk>/", self.admin_site.admin_view(self.gelmedi)),
+        ] + urls
 
-    kullanici_badge.short_description = "Kullanıcı"
+    def onayla(self, request, pk):
+        r = get_object_or_404(Randevu, pk=pk); r.onayla(request.user); r.save()
+        messages.success(request, "Randevu onaylandı."); return safe_redirect(request)
 
-    def cihaz_bilgisi(self, obj):
-        return f"{obj.cihaz.isim} ({obj.cihaz.lab.isim})"
+    def iptal(self, request, pk):
+        r = get_object_or_404(Randevu, pk=pk); r.sonradan_iptal(); r.save()
+        return safe_redirect(request)
 
-    cihaz_bilgisi.short_description = "Cihaz / Lab"
+    def geldi(self, request, pk):
+        r = get_object_or_404(Randevu, pk=pk); r.geldi_isaretle(); r.save()
+        return safe_redirect(request)
 
-    def tarih_saat(self, obj):
-        return f"{obj.tarih} | {obj.baslangic_saati}-{obj.bitis_saati}"
+    def gelmedi(self, request, pk):
+        r = get_object_or_404(Randevu, pk=pk); r.gelmedi_isaretle(); r.save()
+        return safe_redirect(request)
 
-    tarih_saat.short_description = "Zaman"
-
-
-# --- PROFİL (Hatasız) ---
-@admin.register(Profil)
-class ProfilAdmin(admin.ModelAdmin):
-    list_display = (
-        "resim_yuvarlak",
-        "kullanici_adi",
-        "okul_numarasi",
-        "dogrulama_kodu",
-        "iletisim_ikonlari",
-    )
-    search_fields = ("user__username", "okul_numarasi")
-
-    def kullanici_adi(self, obj):
-        return obj.user.username
-
-    def resim_yuvarlak(self, obj):
-        if obj.resim:
-            return format_html(
-                '<img src="{}" style="width: 40px; height:40px; border-radius:50%; object-fit:cover; box-shadow: 0 2px 5px rgba(0,0,0,0.2);" />',
-                obj.resim.url,
-            )
-        # Resim yoksa hata vermemesi için mark_safe kullanıyoruz
-        return mark_safe('<span style="color:#ccc; font-style:italic;">Yok</span>')
-
-    resim_yuvarlak.short_description = "Fotoğraf"
-
-    def iletisim_ikonlari(self, obj):
-        if obj.telefon:
-            return format_html(
-                '<a href="tel:{}"><i class="fas fa-phone"></i> {}</a>',
-                obj.telefon,
-                obj.telefon,
-            )
-        return "-"
-
-    iletisim_ikonlari.short_description = "İletişim"
-
-
-# --- ARIZA ---
-@admin.action(description="🛠️ İlgili cihazları KAPAT")
-def cihazlari_kapat(modeladmin, request, queryset):
-    sayac = 0
-    for ariza in queryset:
-        if ariza.cihaz.aktif_mi:
-            ariza.cihaz.aktif_mi = False
-            ariza.cihaz.save()
-            sayac += 1
-    modeladmin.message_user(
-        request, f"{sayac} cihaz arıza nedeniyle kapatıldı.", level="WARNING"
-    )
-
+# ============================================================
+# ARIZA – HIZLI ÇÖZÜM
+# ============================================================
 
 @admin.register(Ariza)
 class ArizaAdmin(admin.ModelAdmin):
-    list_display = ("cihaz", "kullanici", "aciklama_goster", "tarih", "cozuldu_mu")
-    list_filter = ("cozuldu_mu", "tarih")
-    list_editable = ("cozuldu_mu",)
-    actions = [cihazlari_kapat]
+    list_display = ("cihaz", "kullanici", "tarih", "buton")
+    def buton(self, obj):
+        if obj.cozuldu_mu:
+            return format_html('<a class="button" href="geri/{}/">Geri Al</a>', obj.id)
+        return format_html('<a class="button" style="background:#dc3545;color:white;cursor:pointer;" href="coz/{}/">Çöz</a>', obj.id)
 
-    def aciklama_goster(self, obj):
-        return obj.aciklama[:40] + "..." if obj.aciklama else "-"
+    def get_urls(self):
+        urls = super().get_urls()
+        return [path("coz/<int:pk>/", self.admin_site.admin_view(self.coz)), path("geri/<int:pk>/", self.admin_site.admin_view(self.geri))] + urls
 
-    aciklama_goster.short_description = "Sorun"
+    def coz(self, request, pk):
+        a = get_object_or_404(Ariza, pk=pk); a.cozuldu_mu = True; a.save()
+        return safe_redirect(request)
 
+    def geri(self, request, pk):
+        a = get_object_or_404(Ariza, pk=pk); a.cozuldu_mu = False; a.save()
+        return safe_redirect(request)
 
-# --- DUYURU ---
-@admin.register(Duyuru)
-class DuyuruAdmin(admin.ModelAdmin):
-    list_display = ("baslik", "tarih", "aktif_mi")
-    list_editable = ("aktif_mi",)
+# ============================================================
+# USER & PROXY MODELLER (HATASIZ VERSİYON)
+# ============================================================
 
+admin.site.unregister(User)
 
-# ========================================================
-# 3. KULLANICI YÖNETİMİ (USER & PROXY)
-# ========================================================
-
-# 1. Varsayılan User panelini kaldır
-try:
-    admin.site.unregister(User)
-except admin.sites.NotRegistered:
-    pass
-
-
-# 2. Ana User Modeli (Tüm Kullanıcılar)
 @admin.register(User)
-class CustomUserAdmin(UserAdmin):
-    # Tüm aksiyonları buraya ekliyoruz
-    actions = [super_yap, normal_yap, kullanicilari_pasife_al]
-    list_display = (
-        "username",
-        "email",
-        "first_name",
-        "last_name",
-        "is_staff",
-        "is_superuser",
-        "is_active",
-    )
-    list_filter = ("is_staff", "is_superuser", "is_active", "groups")
+class CustomUserAdmin(AdminMassMailMixin, UserAdmin):
+    actions = [aktif_yap, pasif_yap, mail_gonder, ozel_mail_action]
 
-
-# 3. Proxy Model: Onay Bekleyenler (Pasif)
 @admin.register(OnayBekleyenler)
-class OnayBekleyenlerAdmin(UserAdmin):
-    list_display = (
-        "username",
-        "email",
-        "first_name",
-        "last_name",
-        "date_joined",
-        "is_active",
-    )
-    list_display_links = ("username",)
-
-    # Sadece Pasifleri Getir
+class OnayBekleyenlerAdmin(AdminMassMailMixin, UserAdmin):
+    actions = [aktif_yap, mail_gonder, ozel_mail_action]
+    list_display = ("username", "email", "aktiflik_durumu", "tek_tik_aktif_et")
+    
     def get_queryset(self, request):
         return super().get_queryset(request).filter(is_active=False)
 
-    # Sadece Onaylama butonu olsun
-    actions = [kullanicilari_onayla]
+    def aktiflik_durumu(self, obj):
+        # format_html içine boş bir string ekleyerek hata giderildi
+        return format_html('<span style="background:#dc3545;color:white;padding:3px 8px;border-radius:10px;font-size:11px;cursor:pointer;">PASİF</span>', "")
 
+    def tek_tik_aktif_et(self, obj):
+        return format_html('<a class="button" style="background:#28a745;color:white;cursor:pointer;" href="aktif-et/{}/">Aktif Et</a>', obj.id)
 
-# 4. Proxy Model: Aktif Öğrenciler
+    def get_urls(self):
+        urls = super().get_urls()
+        return [path("aktif-et/<int:pk>/", self.admin_site.admin_view(self.aktif_et))] + urls
+
+    def aktif_et(self, request, pk):
+        u = get_object_or_404(User, pk=pk); u.is_active = True; u.save()
+        messages.success(request, f"{u.username} aktif edildi."); return safe_redirect(request)
+
 @admin.register(AktifOgrenciler)
-class AktifOgrencilerAdmin(UserAdmin):
-    list_display = ("username", "email", "first_name", "last_name", "last_login")
-    list_display_links = ("username",)
+class AktifOgrencilerAdmin(AdminMassMailMixin, UserAdmin):
+    actions = [pasif_yap, mail_gonder, ozel_mail_action]
+    list_display = ("username", "email", "aktiflik_durumu", "tek_tik_pasif_et")
 
-    # Sadece Aktifleri Getir
     def get_queryset(self, request):
         return super().get_queryset(request).filter(is_active=True)
 
-    # Sadece Pasife Alma butonu olsun
-    actions = [kullanicilari_pasife_al]
+    def aktiflik_durumu(self, obj):
+        # format_html içine boş bir string ekleyerek hata giderildi
+        return format_html('<span style="background:#28a745;color:white;padding:3px 8px;border-radius:10px;font-size:11px;cursor:pointer;">AKTİF</span>', "")
+
+    def tek_tik_pasif_et(self, obj):
+        return format_html('<a class="button" style="background:#dc3545;color:white;cursor:pointer;" href="pasif-et/{}/">Pasif Et</a>', obj.id)
+
+    def get_urls(self):
+        urls = super().get_urls()
+        return [path("pasif-et/<int:pk>/", self.admin_site.admin_view(self.pasif_et))] + urls
+
+    def pasif_et(self, request, pk):
+        u = get_object_or_404(User, pk=pk); u.is_active = False; u.save()
+        messages.warning(request, f"{u.username} pasif yapıldı."); return safe_redirect(request)
+
+# ============================================================
+# PROFİL & DUYURU
+# ============================================================
+@admin.register(Profil)
+class ProfilAdmin(AdminMassMailMixin, admin.ModelAdmin):
+    list_display = ("user", "okul_numarasi", "telefon")
+    actions = [ozel_mail_action]
+
+@admin.register(Duyuru)
+class DuyuruAdmin(admin.ModelAdmin):
+    list_display = ('baslik', 'tarih', 'aktif_mi') # Listede tarihi ve durumunu gör
+    list_filter = ('aktif_mi', 'tarih') # Tarihe göre filtreleme yap
+    search_fields = ('baslik', 'icerik')

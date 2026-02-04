@@ -1,33 +1,140 @@
 {% extends 'base.html' %}
-{# Template: Yönetici -> Arızalı cihazlar listesi
-   View: `rezervasyon.views.arizali_cihaz_listesi`
-   Beklenen context: 'cihazlar'
-#}
+{% load static %}
+
 {% block icerik %}
-<div class="container mt-4">
-    <h3>🛠️ Arızalı / Pasif Cihazlar</h3>
-    <table class="table table-danger mt-3">
-        <thead>
-            <tr>
-                <th>Cihaz Adı</th>
-                <th>Laboratuvar</th>
-                <th>Açıklama</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for cihaz in cihazlar %}
-            <tr>
-                <td>{{ cihaz.isim }}</td>
-                <td>{{ cihaz.lab.isim }}</td>
-                <td>{{ cihaz.aciklama }}</td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="3">Arızalı cihaz bulunmamaktadır.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    <a href="{% url 'egitmen_paneli' %}" class="btn btn-secondary">🔙 Geri Dön</a>
+<style>
+    /* BTÜ Temalı Arıza Takip Paneli Tasarımı */
+    :root { --btu-blue: #003366; --btu-danger: #dc3545; --btu-warning: #ffc107; }
+
+    .status-card {
+        border: none;
+        border-radius: 20px;
+        background: #ffffff;
+        box-shadow: 0 10px 30px rgba(220, 53, 69, 0.08); /* Hafif kırmızı gölge */
+        overflow: hidden;
+    }
+
+    .table thead th {
+        background-color: var(--btu-blue);
+        color: white;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 0.5px;
+        font-weight: 700;
+        border: none;
+        padding: 18px;
+    }
+
+    /* Arıza Satırı Vurgusu */
+    .faulty-row {
+        transition: all 0.3s ease;
+        border-left: 5px solid transparent;
+    }
+    .faulty-row:hover {
+        background-color: #fff5f5 !important;
+        border-left: 5px solid var(--btu-danger);
+        transform: scale(1.002);
+    }
+
+    .badge-maintenance {
+        background-color: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeeba;
+        padding: 6px 12px;
+        border-radius: 50px;
+        font-weight: 700;
+        font-size: 0.7rem;
+    }
+
+    .device-name { color: var(--btu-blue); font-weight: 800; }
+</style>
+
+<div class="container mt-2 mb-5 px-lg-4">
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-8">
+            <h2 class="fw-bold text-danger mb-0">
+                <i class="bi bi-tools me-2"></i>Teknik Bakım & Arıza Takibi
+            </h2>
+            <p class="text-muted small mb-0">Laboratuvarlarda şu an servis dışı veya arızalı olan cihazların listesi.</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{% url 'egitmen_paneli' %}" class="btn btn-outline-secondary rounded-pill px-4 fw-bold shadow-sm mt-3 mt-md-0">
+                <i class="bi bi-arrow-left me-2"></i>Panele Dön
+            </a>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-danger text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-0 opacity-75">Toplam Arıza</h6>
+                        <h3 class="fw-bold mb-0">{{ cihazlar|length }} Cihaz</h3>
+                    </div>
+                    <i class="bi bi-exclamation-octagon fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card status-card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Cihaz Bilgisi</th>
+                            <th>Laboratuvar Konumu</th>
+                            <th>Arıza / Bakım Detayı</th>
+                            <th class="text-center">Durum</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cihaz in cihazlar %}
+                        <tr class="faulty-row">
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-light p-2 rounded-3 me-3 text-danger">
+                                        <i class="bi bi-pc-display fs-4"></i>
+                                    </div>
+                                    <div>
+                                        <span class="device-name d-block">{{ cihaz.isim }}</span>
+                                        <small class="text-muted">ID: #{{ cihaz.id }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border fw-bold">
+                                    <i class="bi bi-geo-alt-fill text-primary me-1"></i>{{ cihaz.lab.isim }}
+                                </span>
+                            </td>
+                            <td>
+                                <p class="mb-0 small text-secondary fst-italic">
+                                    {{ cihaz.aciklama|default:"Arıza açıklaması girilmemiş." }}
+                                </p>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge-maintenance">
+                                    <i class="bi bi-clock-history me-1"></i>PASİF
+                                </span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center py-5">
+                                <div class="opacity-50">
+                                    <i class="bi bi-check2-circle display-1 text-success mb-3"></i>
+                                    <h4 class="fw-bold text-dark">Her Şey Yolunda!</h4>
+                                    <p class="mb-0">Şu an sistemde arızalı cihaz kaydı bulunmuyor.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

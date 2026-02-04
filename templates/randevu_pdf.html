@@ -1,95 +1,196 @@
 <!DOCTYPE html>
 <html lang="tr">
-<!-- Bu template: Kullanıcının randevu dökümünü PDF olarak üretir.
-     Kullanıldığı view: `rezervasyon.views.randevu_pdf_indir` (render_to_pdf ile çağrılır).
-     Beklenen context: `randevular` (QuerySet), `user` (User objesi).
--->
-
 <head>
     <meta charset="utf-8">
-    <title>Randevu Dökümü</title>
+    <title>BTÜ Randevu Raporu</title>
     <style>
-        /* Not: DejaVuSans reportlab'e programatik olarak kayıt ediliyor, burada @font-face kullanmıyoruz */
+        /* Karakter desteği için DejaVuSans zorunludur */
+        @font-face {
+            font-family: 'DejaVuSans';
+            src: url('DejaVuSans.ttf');
+        }
+
+        @page {
+            size: a4 portrait;
+            margin: 1.5cm;
+            @frame footer {
+                -pdf-frame-content: footerContent;
+                bottom: 1cm;
+                height: 1cm;
+            }
+        }
 
         body {
-            font-family: 'DejaVuSans', sans-serif;
-            /* Unicode desteği olan font */
-            color: #333;
-            font-size: 12px;
+            font-family: 'DejaVuSans', sans-serif !important;
+            color: #2d3748;
+            font-size: 10px;
+            line-height: 1.6;
         }
 
-        h1 {
-            text-align: center;
-            color: #2c3e50;
-            border-bottom: 2px solid #2c3e50;
-            padding-bottom: 8px;
-            margin-bottom: 20px;
+        /* Üst Bilgi Alanı (Modern Gradient Çizgili) */
+        .header-container {
+            width: 100%;
+            border-bottom: 3px solid #003366; /* BTÜ Lacivert */
+            padding-bottom: 15px;
+            margin-bottom: 25px;
         }
 
-        table {
+        .uni-brand {
+            font-size: 16px;
+            font-weight: bold;
+            color: #003366;
+            text-transform: uppercase;
+        }
+
+        .system-name {
+            font-size: 10px;
+            color: #00a8cc; /* BTÜ Turkuaz */
+            font-weight: bold;
+        }
+
+        .report-type {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1a202c;
+            text-align: right;
+        }
+
+        /* Kullanıcı Bilgi Kartı */
+        .user-card {
+            background-color: #f7fafc;
+            border: 1px solid #e2e8f0;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .user-card table { width: 100%; }
+        .label { font-weight: bold; color: #4a5568; width: 120px; }
+        .value { color: #1a202c; font-weight: bold; }
+
+        /* Ana Veri Tablosu */
+        table.main-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
+            border-radius: 8px;
+            overflow: hidden;
         }
 
-        th {
-            background-color: #f2f2f2;
-            padding: 8px;
-            border: 1px solid #ccc;
+        table.main-table th {
+            background-color: #003366;
+            color: #ffffff;
+            padding: 12px 10px;
             text-align: left;
-        }
-
-        td {
-            padding: 8px;
-            border: 1px solid #ccc;
-        }
-
-        .footer {
-            position: fixed;
-            bottom: 20px;
-            width: 100%;
-            text-align: center;
+            text-transform: uppercase;
             font-size: 9px;
-            color: #777;
+            letter-spacing: 0.5px;
+        }
+
+        table.main-table td {
+            padding: 10px;
+            border-bottom: 1px solid #edf2f7;
+            vertical-align: middle;
+        }
+
+        /* Zebra Satırlar */
+        .row-even { background-color: #ffffff; }
+        .row-odd { background-color: #fcfdfe; }
+
+        /* Durum Badge Tasarımı */
+        .badge {
+            font-weight: bold;
+            font-size: 8.5px;
+            padding: 3px 6px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .badge-success { color: #27ae60; border: 0.5px solid #27ae60; }
+        .badge-warning { color: #d69e2e; border: 0.5px solid #d69e2e; }
+        .badge-danger { color: #e53e3e; border: 0.5px solid #e53e3e; }
+
+        /* Alt Bilgi */
+        #footerContent {
+            text-align: center;
+            font-size: 8px;
+            color: #718096;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 8px;
         }
     </style>
 </head>
-
 <body>
 
-    <h1>LABORATUVAR RANDEVU DÖKÜMÜ</h1>
+    <table class="header-container">
+        <tr>
+            <td width="60%">
+                <div class="uni-brand">BURSA TEKNIK ÜNIVERSITESI</div>
+                <div class="system-name">LABORATUVAR REZERVASYON SISTEMI</div>
+            </td>
+            <td width="40%" class="report-type">
+                RANDEVU RAPORU
+            </td>
+        </tr>
+    </table>
 
-    <div style="margin-bottom: 20px;">
-        <strong>Öğrenci:</strong> {{ user.first_name }} {{ user.last_name }} <br>
-        <strong>Email:</strong> {{ user.email }} <br>
-        <strong>Tarih:</strong> {% now "d.m.Y H:i" %}
+    <div class="user-card">
+        <table>
+            <tr>
+                <td class="label">KULLANICI ADI </td>:</td>
+                <td class="value">{{ user.first_name }} {{ user.last_name|upper }}</td>
+                <td class="label" style="text-align:right;">Rapor Tarihi:</td>
+                <td class="value" style="text-align:right;">{% now "d.m.Y H:i" %}</td>
+            </tr>
+            <tr>
+                <td class="label">Kurumsal E-Posta:</td>
+                <td class="value">{{ user.email }}</td>
+                <td class="label" style="text-align:right;">Belge No:</td>
+                <td class="value" style="text-align:right;">#{{ user.id }}-{% now "Ymd" %}</td>
+            </tr>
+        </table>
     </div>
 
-    <table>
+    <table class="main-table">
         <thead>
             <tr>
-                <th>Tarih</th>
-                <th>Saat</th>
-                <th>Cihaz</th>
-                <th>Durum</th>
+                <th width="15%">Islem Tarihi</th>
+                <th width="15%">Saat </th>
+                <th width="50%">Cihaz ve Laboratuvar Detayi</th>
+                <th width="20%" style="text-align: center;">Kullanim Durumu</th>
             </tr>
         </thead>
         <tbody>
             {% for randevu in randevular %}
+            <tr class="{% cycle 'row-even' 'row-odd' %}">
+                <td style="font-weight: bold;">{{ randevu.tarih|date:"d.m.Y" }}</td>
+                <td>{{ randevu.baslangic_saati|time:"H:i" }} - {{ randevu.bitis_saati|time:"H:i" }}</td>
+                <td>
+                    <div style="color: #003366; font-weight: bold;">{{ randevu.cihaz.isim }}</div>
+                    <div style="font-size: 8px; color: #718096;">{{ randevu.cihaz.lab.isim }}</div>
+                </td>
+                <td style="text-align: center;">
+                    {% if randevu.durum == 'geldi' or randevu.durum == 'Onaylandı' %}
+                        <span class="badge badge-success">ONAYLANDI</span>
+                    {% elif randevu.durum == 'bekleniyor' or randevu.durum == 'Bekliyor' %}
+                        <span class="badge badge-warning">BEKLEMEDE</span>
+                    {% else %}
+                        <span class="badge badge-danger">{{ randevu.durum|upper }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
             <tr>
-                <td>{{ randevu.tarih|date:"d.m.Y" }}</td>
-                <td>{{ randevu.baslangic_saati }} - {{ randevu.bitis_saati }}</td>
-                <td>{{ randevu.cihaz.isim }}</td>
-                <td>{{ randevu.durum|upper }}</td>
+                <td colspan="4" style="text-align: center; padding: 40px; color: #a0aec0;">
+                    Sistemde kayitli herhangi bir randevu verisi bulunamadi.
+                </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 
-    <div class="footer">
-        Bu belge otomatik oluşturulmuştur.
+    <div id="footerContent">
+        Bu belge BTÜ Okul LabSistemi tarafindan dijital ortamda olusturulmustur. <br/>
+        Dogrulama Kodu: BTÜ-{{ user.username|upper }}-{% now "is" %} | Sayfa: <pdf:pagenumber>
     </div>
 
 </body>
-
 </html>

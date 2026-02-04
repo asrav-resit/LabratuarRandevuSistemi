@@ -1,189 +1,164 @@
-<!DOCTYPE html>
-<html>
+{% extends 'base.html' %}
 
-<!-- Template: Randevu oluşturma sayfas
-     View: `rezervasyon.views.randevu_al`
-     Beklenen context: 'cihaz', 'mevcut_randevular', 'secilen_tarih'
--->
-<head>
-    <title>Randevu Al</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 20px;
-            background-color: #f4f6f7;
-            display: flex;
-            justify-content: center;
-        }
+{% block icerik %}
+<style>
+    /* BTÜ Kurumsal Renk Paleti */
+    :root { --btu-blue: #003366; --btu-accent: #00a8cc; --btu-danger: #c0392b; --btu-success: #27ae60; }
 
-        .ana-kapsayici {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            max-width: 900px;
-            width: 100%;
-        }
+    .booking-wrapper {
+        animation: fadeIn 0.5s ease-in;
+    }
 
-        /* SOL KUTU: DOLU SAATLER */
-        .liste-kutusu {
-            flex: 1;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            border-left: 5px solid #c0392b;
-            /* Kırmızı çizgi */
-        }
+    /* Sol Panel: Doluluk Çizelgesi */
+    .schedule-card {
+        border: none;
+        border-radius: 20px;
+        background: white;
+        box-shadow: 0 10px 30px rgba(0, 51, 102, 0.05);
+        border-top: 5px solid var(--btu-danger);
+    }
 
-        /* SAĞ KUTU: RANDEVU FORMU */
-        .form-kutusu {
-            flex: 1;
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            border-left: 5px solid #27ae60;
-            /* Yeşil çizgi */
-            height: fit-content;
-        }
+    /* Sağ Panel: Randevu Formu */
+    .form-card {
+        border: none;
+        border-radius: 20px;
+        background: white;
+        box-shadow: 0 10px 30px rgba(0, 51, 102, 0.05);
+        border-top: 5px solid var(--btu-success);
+    }
 
-        .dolu-slot {
-            background-color: #ffebee;
-            color: #c62828;
-            padding: 10px;
-            margin-bottom: 8px;
-            border-radius: 6px;
-            font-size: 0.95em;
-            display: flex;
-            justify-content: space-between;
-            /* İki uca yasla */
-            align-items: center;
-            border: 1px solid #ffcdd2;
-        }
+    /* Dolu Slot Tasarımı */
+    .occupied-slot {
+        background: #fff5f5;
+        border-radius: 12px;
+        padding: 12px 15px;
+        margin-bottom: 10px;
+        border: 1px dashed #feb2b2;
+        transition: transform 0.2s;
+    }
+    .occupied-slot:hover { transform: translateX(5px); }
 
-        .tarih-secici {
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #eee;
-        }
+    /* Form Elemanları */
+    .form-label { font-weight: 700; color: var(--btu-blue); font-size: 0.9rem; }
+    .form-control-btu {
+        border-radius: 10px;
+        border: 2px solid #edf2f7;
+        padding: 12px;
+    }
+    .form-control-btu:focus {
+        border-color: var(--btu-accent);
+        box-shadow: 0 0 0 3px rgba(0, 168, 204, 0.1);
+    }
 
-        input,
-        select {
-            padding: 12px;
-            margin: 8px 0;
-            width: 95%;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            font-size: 14px;
-        }
+    .btn-confirm {
+        background: linear-gradient(135deg, var(--btu-success), #2ecc71);
+        border: none;
+        padding: 15px;
+        border-radius: 12px;
+        font-weight: 800;
+        letter-spacing: 1px;
+    }
 
-        button {
-            background-color: #27ae60;
-            color: white;
-            padding: 12px 20px;
-            border: none;
-            cursor: pointer;
-            font-size: 16px;
-            border-radius: 6px;
-            width: 100%;
-            transition: background 0.3s;
-        }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
 
-        button:hover {
-            background-color: #2ecc71;
-        }
-
-        .hata {
-            background-color: #ffdddd;
-            color: #c0392b;
-            padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 10px;
-        }
-
-        .basari {
-            background-color: #ddffdd;
-            color: #27ae60;
-            padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 10px;
-        }
-    </style>
-</head>
-
-<body>
-
-    <div class="ana-kapsayici">
-
-        <div class="liste-kutusu">
-            <h3 style="color:#c0392b;">📋 Dolu Saatler</h3>
-
-            <div class="tarih-secici">
-                <label style="color:gray;">📅 Tarih Seçin:</label>
-                <form method="GET">
-                    <input type="date" name="tarih" value="{{ secilen_tarih }}" onchange="this.form.submit()">
-                </form>
-            </div>
-
-            <h4>{{ secilen_tarih }} Programı:</h4>
-
-            {% for randevu in mevcut_randevular %}
-            <div class="dolu-slot">
-                <div>
-                    🕒 <strong>{{ randevu.baslangic_saati|time:"H:i" }} - {{ randevu.bitis_saati|time:"H:i" }}</strong>
-                </div>
-
-                <div style="text-align: right;">
-                    <span style="display:block; font-weight:bold; color:#333;">{{ randevu.kullanici.username }}</span>
-                    <span style="font-size:0.75em; color:#c62828;">(Dolu)</span>
-                </div>
-            </div>
-            {% empty %}
-            <p style="color: green; text-align:center; padding:20px; background:#e8f5e9; border-radius:5px;">
-                ✅ Cihaz tüm gün boş!
-            </p>
-            {% endfor %}
+<div class="container booking-wrapper mb-5">
+    <div class="text-center mb-5 mt-2">
+        <h2 class="fw-bold text-primary mb-0"><i class="bi bi-calendar-plus me-2"></i>Yeni Randevu Oluştur</h2>
+        <div class="badge bg-info text-white px-3 py-2 rounded-pill mt-2">
+            <i class="bi bi-pc-display me-1"></i> {{ cihaz.isim }} | {{ cihaz.lab.isim }}
         </div>
-
-        <div class="form-kutusu">
-            <h2 style="margin-top:0;">📝 Randevu Al</h2>
-            <h4 style="color:#2c3e50; margin-bottom:5px;">{{ cihaz.isim }}</h4>
-            <small style="color:gray;">{{ cihaz.lab.isim }}</small>
-            <hr style="border:0; border-top:1px solid #eee; margin:15px 0;">
-
-            {% if messages %}
-            {% for message in messages %}
-            <div class="{% if message.tags == 'error' %}hata{% else %}basari{% endif %}">
-                {{ message }}
-            </div>
-            {% endfor %}
-            {% endif %}
-
-            <form method="POST">
-                {% csrf_token %}
-
-                <label>Seçili Tarih:</label>
-                <input type="date" name="tarih" value="{{ secilen_tarih }}" readonly
-                    style="background-color:#eee; color:#555;">
-
-                <label>Başlangıç Saati:</label>
-                <input type="time" name="baslangic" required>
-
-                <label>Bitiş Saati:</label>
-                <input type="time" name="bitis" required>
-
-                <br><br>
-                <button type="submit">Randevuyu Onayla ✅</button>
-            </form>
-
-            <br>
-            <div style="text-align: center;">
-                <a href="/" style="text-decoration: none; color: #3498db;">❌ İptal</a>
-            </div>
-        </div>
-
     </div>
 
-</body>
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <div class="card schedule-card h-100 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold text-danger mb-0"><i class="bi bi-clock-history me-2"></i>Dolu Saatler</h5>
+                </div>
 
-</html>
+                <div class="bg-light rounded-4 p-3 mb-4">
+                    <label class="form-label d-block mb-2 text-muted small">Farklı Bir Tarihe Bak:</label>
+                    <form method="GET" class="d-flex gap-2">
+                        <input type="date" name="tarih" value="{{ secilen_tarih }}" 
+                               class="form-control form-control-sm border-0 shadow-sm" 
+                               onchange="this.form.submit()">
+                    </form>
+                </div>
+
+                <div class="schedule-list">
+                    <h6 class="fw-bold mb-3 border-bottom pb-2 text-secondary">{{ secilen_tarih }} Programı</h6>
+                    
+                    {% for randevu in mevcut_randevular %}
+                    <div class="occupied-slot d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="d-block fw-bold text-danger small">
+                                <i class="bi bi-hourglass-split me-1"></i> {{ randevu.baslangic_saati|time:"H:i" }} - {{ randevu.bitis_saati|time:"H:i" }}
+                            </span>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-white text-dark border rounded-pill shadow-sm small">
+                                <i class="bi bi-person-fill me-1"></i> {{ randevu.kullanici.username }}
+                            </span>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-5 bg-light rounded-4 border border-dashed">
+                        <i class="bi bi-check2-circle display-4 text-success mb-2"></i>
+                        <p class="text-success fw-bold mb-0">Cihaz Tüm Gün Müsait!</p>
+                        <small class="text-muted small">İstediğiniz saat aralığını seçebilirsiniz.</small>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="card form-card h-100 p-4 p-lg-5">
+                <div class="text-center mb-4 border-bottom pb-3">
+                    <h4 class="fw-bold text-dark mb-1">Rezervasyon Bilgileri</h4>
+                    <p class="text-muted small">Lütfen uygun bir saat aralığı belirleyerek onaylayın.</p>
+                </div>
+
+                <form method="POST">
+                    {% csrf_token %}
+
+                    <div class="mb-4">
+                        <label class="form-label">Seçili Tarih</label>
+                        <div class="input-group shadow-sm rounded-3">
+                            <span class="input-group-text bg-white border-0"><i class="bi bi-calendar-event text-primary"></i></span>
+                            <input type="date" name="tarih" value="{{ secilen_tarih }}" readonly 
+                                   class="form-control border-0 bg-light fw-bold text-primary">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label">Başlangıç Saati</label>
+                            <input type="time" name="baslangic" required class="form-control form-control-btu shadow-sm">
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label">Bitiş Saati</label>
+                            <input type="time" name="bitis" required class="form-control form-control-btu shadow-sm">
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info border-0 shadow-sm d-flex align-items-center mb-4 rounded-4">
+                        <i class="bi bi-info-circle-fill me-3 fs-4"></i>
+                        <small>Randevunuz laboratuvar sorumlusu tarafından incelendikten sonra kesinleşecektir.</small>
+                    </div>
+
+                    <div class="d-grid gap-3">
+                        <button type="submit" class="btn btn-confirm text-white shadow-lg">
+                            RANDEVUYU ONAYLA <i class="bi bi-check2-circle ms-2"></i>
+                        </button>
+                        <a href="{% url 'lab_detay' cihaz.lab.id %}" class="btn btn-link text-secondary text-decoration-none fw-bold small">
+                            <i class="bi bi-arrow-left me-1"></i> İşlemi İptal Et
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

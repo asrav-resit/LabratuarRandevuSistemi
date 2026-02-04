@@ -1,40 +1,127 @@
 {% extends 'base.html' %}
 
-{# Template: Email doğrulama ekranı
-   View: `rezervasyon.views.email_dogrulama`
-   Beklenen behavior: POST ile doğrulama kodunu kontrol eder
-#}
-
 {% block icerik %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">📧 E-Posta Doğrulama</h4>
+<style>
+    /* BTÜ Temalı Arka Plan ve Yumuşak Geçiş */
+    body {
+        background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%) !important;
+    }
+
+    /* Kart Tasarımı */
+    .verify-card {
+        border: none;
+        border-radius: 1.5rem;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        animation: slideUp 0.6s ease-out;
+    }
+
+    .verify-header {
+        background: linear-gradient(135deg, #003366, #0056b3);
+        color: white;
+        padding: 2.5rem 1rem;
+        border-radius: 1.5rem 1.5rem 0 0;
+    }
+
+    /* Büyük Kod Giriş Alanı */
+    .code-input {
+        font-size: 2.5rem !important;
+        letter-spacing: 0.8rem;
+        font-weight: 700;
+        border: 3px solid #e2e8f0;
+        border-radius: 1rem;
+        color: #003366;
+        transition: all 0.3s ease;
+        background-color: #f8fafc;
+    }
+
+    .code-input:focus {
+        border-color: #00a8cc; /* BTÜ Turkuaz */
+        background-color: white;
+        box-shadow: 0 0 0 0.3rem rgba(0, 168, 204, 0.2);
+        transform: translateY(-2px);
+    }
+
+    /* Doğrula Butonu */
+    .btn-verify {
+        background: linear-gradient(135deg, #00a8cc, #0088a8);
+        border: none;
+        border-radius: 1rem;
+        padding: 1rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-verify:hover {
+        filter: brightness(1.1);
+        box-shadow: 0 8px 20px rgba(0, 168, 204, 0.3);
+        transform: translateY(-2px);
+    }
+
+    /* Animasyon */
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+
+<div class="container">
+    <div class="row justify-content-center align-items-center" style="min-height: 80vh;">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-lg verify-card">
+                
+                <div class="verify-header text-center">
+                    <div class="mb-3 display-6">
+                        <i class="bi bi-envelope-check-fill"></i>
+                    </div>
+                    <h3 class="fw-bold mb-1">Hesabınızı Doğrulayın</h3>
+                    <p class="small opacity-75 mb-0">Güvenliğiniz için son bir adım kaldı</p>
                 </div>
-                <div class="card-body">
+
+                <div class="card-body p-4 p-lg-5 text-center">
+                    
                     {% if messages %}
                     {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                    <div class="alert alert-{{ message.tags }} border-0 shadow-sm rounded-4 mb-4">
+                        <i class="bi bi-info-circle-fill me-2"></i>{{ message }}
+                    </div>
                     {% endfor %}
                     {% endif %}
 
-                    <p class="text-muted">
-                        E-posta adresinize gönderilen <strong>6 haneli doğrulama kodunu</strong> aşağıya giriniz.
+                    <p class="text-muted mb-4">
+                        E-posta adresinize gönderilen <br>
+                        <span class="badge bg-light text-primary border px-3 py-2 mt-2 fs-6">6 haneli kodu</span> <br>
+                        aşağıdaki alana giriniz.
                     </p>
 
-                    <form method="POST">
+                    <form method="POST" autocomplete="off">
                         {% csrf_token %}
-                        <div class="mb-3">
-                            <label for="kod" class="form-label">Doğrulama Kodu</label>
-                            <input type="text" name="kod" class="form-control text-center" placeholder="123456"
-                                maxlength="6" style="font-size: 24px; letter-spacing: 5px;" required>
+                        <div class="mb-4">
+                            <label for="kod" class="form-label fw-bold text-dark d-none">Doğrulama Kodu</label>
+                            <input type="text" name="kod" 
+                                   class="form-control text-center code-input shadow-sm" 
+                                   placeholder="000000"
+                                   maxlength="6" 
+                                   pattern="\d{6}" 
+                                   inputmode="numeric"
+                                   required 
+                                   autofocus>
                         </div>
+                        
                         <div class="d-grid">
-                            <button type="submit" class="btn btn-success btn-lg">Doğrula ve Giriş Yap</button>
+                            <button type="submit" class="btn btn-primary btn-verify text-white">
+                                Doğrula ve Giriş Yap <i class="bi bi-shield-lock-fill ms-2"></i>
+                            </button>
                         </div>
                     </form>
+
+                    <div class="mt-4 pt-3 border-top">
+                        <p class="small text-muted mb-0">
+                            Kod gelmedi mi? <br>
+                            <a href="#" class="text-decoration-none fw-bold text-info">Kodu Tekrar Gönder</a>
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>

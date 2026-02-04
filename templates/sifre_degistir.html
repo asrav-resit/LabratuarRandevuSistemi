@@ -1,16 +1,110 @@
 {% extends 'base.html' %}
-{# Template: Şifre değiştirme ekranı; beklenen context: form #}
-{% block icerik %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card shadow">
-            <div class="card-body">
-                <h3 class="mb-4">🔑 Şifre Değiştir</h3>
-                <form method="post">
-                    {% csrf_token %}
-                    {{ form.as_p }}
-                    <button type="submit" class="btn btn-primary w-100">Yeni Şifreyi Kaydet</button>
-                </form>
+{% load widget_tweaks %} {% block icerik %}
+<style>
+    /* BTÜ Temalı Güvenlik Sayfası */
+    :root { --btu-blue: #003366; --btu-accent: #00a8cc; }
+
+    .security-card {
+        border: none;
+        border-radius: 25px;
+        background: #ffffff;
+        box-shadow: 0 15px 40px rgba(0, 51, 102, 0.08);
+        overflow: hidden;
+    }
+
+    .security-header {
+        background: linear-gradient(135deg, var(--btu-blue) 0%, #0056b3 100%);
+        padding: 2.5rem 1rem;
+    }
+
+    /* Form Elemanları Özelleştirmesi */
+    .form-group label {
+        font-weight: 700;
+        color: var(--btu-blue);
+        margin-bottom: 0.5rem;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+    }
+
+    .form-control-btu {
+        border-radius: 12px;
+        border: 2px solid #edf2f7;
+        padding: 0.8rem 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control-btu:focus {
+        border-color: var(--btu-accent);
+        box-shadow: 0 0 0 4px rgba(0, 168, 204, 0.1);
+        outline: none;
+    }
+
+    .helptext {
+        font-size: 0.75rem;
+        color: #718096;
+        display: block;
+        margin-top: 5px;
+        line-height: 1.4;
+    }
+
+    .errorlist {
+        list-style: none;
+        padding: 0;
+        color: #e53e3e;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-top: 5px;
+    }
+</style>
+
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8">
+            <div class="card security-card">
+                <div class="security-header text-center text-white">
+                    <div class="bg-white rounded-circle d-inline-flex p-3 mb-3 shadow-sm">
+                        <i class="bi bi-shield-lock-fill fs-2 text-primary"></i>
+                    </div>
+                    <h3 class="fw-bold mb-1">Güvenlik Ayarları</h3>
+                    <p class="opacity-75 small mb-0">Hesap güvenliğiniz için güçlü bir şifre belirleyin.</p>
+                </div>
+
+                <div class="card-body p-4 p-lg-5">
+                    <form method="post" class="needs-validation">
+                        {% csrf_token %}
+
+                        {% for field in form %}
+                        <div class="form-group mb-4">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            
+                            {% render_field field class="form-control form-control-btu" placeholder=field.label %}
+                            
+                            {% if field.help_text %}
+                            <small class="helptext"><i class="bi bi-info-circle me-1"></i>{{ field.help_text }}</small>
+                            {% endif %}
+                            
+                            {% if field.errors %}
+                            <div class="errorlist">{{ field.errors }}</div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+
+                        <div class="d-grid gap-3 mt-5">
+                            <button type="submit" class="btn btn-primary btn-lg rounded-pill fw-bold shadow-sm py-3">
+                                <i class="bi bi-check2-circle me-2"></i>Şifreyi Güncelle
+                            </button>
+                            <a href="{% url 'randevularim' %}" class="btn btn-link text-decoration-none text-muted small fw-bold text-center">
+                                Vazgeç ve Profile Dön
+                            </a>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="card-footer bg-light border-0 py-3 text-center">
+                    <small class="text-muted" style="font-size: 0.7rem;">
+                        <i class="bi bi-lock me-1"></i> Şifreniz uçtan uca şifrelenerek korunmaktadır.
+                    </small>
+                </div>
             </div>
         </div>
     </div>

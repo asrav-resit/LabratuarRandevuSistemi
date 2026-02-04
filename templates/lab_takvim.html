@@ -1,48 +1,109 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block icerik %}
-<div class="container-fluid mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="fw-bold" style="color: #444;">📅 {{ lab.isim }} Takvimi</h2>
-            <p class="text-muted">Laboratuvar doluluk durumunu görüntüleyin veya boş bir alana tıklayarak randevu oluşturun.</p>
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+
+<style>
+    :root {
+        --btu-blue: #003366;
+        --btu-accent: #00a8cc;
+    }
+
+    /* Arka Plan Artı Sembolleri (Grid Pattern) */
+    body {
+        background-image: 
+            radial-gradient(circle, rgba(0, 51, 102, 0.03) 1px, transparent 1px),
+            radial-gradient(circle, rgba(0, 51, 102, 0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        background-position: 0 0, 20px 20px;
+    }
+
+    /* Takvim Kartı ve Konteynırı */
+    .calendar-card {
+        border: none;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 10px 40px rgba(0, 51, 102, 0.1) !important;
+    }
+
+    #calendar {
+        min-height: 800px;
+        padding: 15px;
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* Hücre İçi Etkinlik Tasarımı (Taşmayı Önleyen) */
+    .fc-event {
+        cursor: pointer;
+        border: none !important;
+        border-radius: 6px !important;
+        margin-bottom: 2px !important;
+        transition: all 0.2s ease;
+        border-left: 4px solid var(--btu-accent) !important;
+        background-color: rgba(0, 86, 179, 0.1) !important;
+    }
+
+    .fc-event:hover {
+        transform: scale(1.02);
+        z-index: 5;
+    }
+
+    .custom-event-node {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 0.8rem;
+        padding: 2px 4px;
+        color: var(--btu-blue);
+    }
+
+    /* Buton ve Başlık Modernizasyonu */
+    .fc-toolbar-title { color: var(--btu-blue); font-weight: 800 !important; }
+    .fc-button-primary {
+        background-color: var(--btu-blue) !important;
+        border: none !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+    }
+    .fc-button-primary:hover { background-color: var(--btu-accent) !important; }
+
+    .fc-day-today { background-color: rgba(0, 168, 204, 0.05) !important; }
+</style>
+
+<div class="container-fluid mt-2 mb-5 px-lg-5">
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-8">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="{% url 'anasayfa' %}" class="text-decoration-none">Ana Sayfa</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'lab_detay' lab.id %}" class="text-decoration-none">{{ lab.isim }}</a></li>
+                    <li class="breadcrumb-item active">Takvim</li>
+                </ol>
+            </nav>
+            <h2 class="fw-bold text-primary mb-0">
+                <i class="bi bi-calendar3 me-2 text-info"></i>{{ lab.isim }} <span class="fw-light text-muted">| Program</span>
+            </h2>
+            <p class="text-muted small mb-0">Laboratuvar doluluğunu inceleyin veya boş bir güne tıklayarak randevu oluşturun.</p>
         </div>
-        <div>
-            <a href="{% url 'lab_detay' lab.id %}" class="btn btn-outline-dark">
-                <i class="fas fa-arrow-left"></i> Cihaz Listesine Dön
+        <div class="col-md-4 text-md-end">
+            <a href="{% url 'lab_detay' lab.id %}" class="btn btn-outline-primary rounded-pill px-4">
+                <i class="bi bi-arrow-left me-2"></i>Cihaz Listesine Dön
             </a>
         </div>
     </div>
 
-    <div class="card shadow-sm border-0" style="border-radius: 15px;">
-        <div class="card-body p-4">
+    <div class="card calendar-card">
+        <div class="card-body">
             <div id='calendar'></div>
         </div>
     </div>
 </div>
 
-<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
-
-<style>
-    /* E-Kampüs Tarzı Tasarım */
-    #calendar {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        min-height: 800px;
-    }
-    .fc-col-header-cell {
-        background-color: #f8f9fa;
-        padding: 10px 0;
-    }
-    .fc-day-today {
-        background-color: #e8f4ff !important; /* Bugünün rengi */
-    }
-    .fc-event {
-        cursor: pointer;
-        border: none;
-        padding: 2px 5px;
-        font-size: 0.85rem;
-    }
-</style>
 {{ cihazlar_json|json_script:"cihaz-data" }}
 
 <script>
@@ -51,101 +112,128 @@
         var devices = JSON.parse(document.getElementById('cihaz-data').textContent);
 
         var calendar = new FullCalendar.Calendar(calendarEl, {
-            // BURAYI DEĞİŞTİRDİK: E-Kampüs gibi Aylık Görünüm
-            initialView: 'dayGridMonth', 
+            initialView: 'dayGridMonth',
             locale: 'tr',
-            firstDay: 1, // Pazartesi ile başla
+            firstDay: 1,
+            dayMaxEvents: 4, 
+            displayEventTime: false, // Hücre taşmasını engelleyen kritik ayar
             headerToolbar: {
                 left: 'prev,next today',
                 center: 'title',
-                right: 'dayGridMonth,timeGridWeek,timeGridDay' // Görünüm değiştirme butonları
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
             },
-            buttonText: {
-                today: 'Bugün',
-                month: 'Ay',
-                week: 'Hafta',
-                day: 'Gün'
-            },
-
-            // API'den veri çekme
+            buttonText: { today: 'Bugün', month: 'Ay', week: 'Hafta', day: 'Gün' },
             events: '/api/lab/{{ lab.id }}/events/',
+            selectable: true,
 
-            selectable: true, // Tıklanabilir yap
+            // İkon Entegrasyonu ve Temiz Görünüm
+            eventContent: function(arg) {
+                let icon = "⚪";
+                let status = arg.event.extendedProps.durum || "";
+                if (status.includes("Onaylandı")) icon = "✅";
+                else if (status.includes("Bekliyor")) icon = "⏳";
+                else if (status.includes("Geldi")) icon = "🟦";
+                else if (status.includes("Gelmedi")) icon = "🟥";
+                else icon = "❌";
 
-            // Boş yere tıklayınca (Yeni Randevu)
+                let container = document.createElement('div');
+                container.className = 'custom-event-node';
+                container.innerHTML = `<span>${icon}</span><span class="fw-bold">${arg.event.title}</span>`;
+                return { domNodes: [container] };
+            },
+
+            // Boş Alan Seçimi (Hızlı Randevu)
             select: function(info) {
                 var modal = new bootstrap.Modal(document.getElementById('selectModal'));
-                
-                // Cihazları listeye doldur
                 var deviceOptions = devices.map(d => `<option value="${d.id}">${d.isim}</option>`).join('');
                 document.getElementById('selectDevice').innerHTML = deviceOptions;
-
-                // Tarihleri doldur
                 document.getElementById('selectDate').value = info.startStr;
-                
                 modal.show();
             },
 
-            // Dolu etkinliğe tıklayınca (Detay Gör)
+            // Etkinlik Tıklama (Detay Modalı)
             eventClick: function(info) {
                 var props = info.event.extendedProps;
+                let startTime = info.event.start.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+                let endTime = info.event.end ? info.event.end.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '';
+
                 document.getElementById('mcTitle').innerText = info.event.title;
-                document.getElementById('mcCihaz').innerText = props.cihaz_id;
+                document.getElementById('mcSaat').innerText = `${startTime} - ${endTime}`;
                 document.getElementById('mcKullanici').innerText = props.kullanici;
                 document.getElementById('mcDurum').innerText = props.durum;
                 
-                var detayModal = new bootstrap.Modal(document.getElementById('eventModal'));
-                detayModal.show();
+                var durumBadge = document.getElementById('mcDurum');
+                durumBadge.className = 'badge rounded-pill px-3 py-2'; 
+                if(props.durum.includes('Onaylandı') || props.durum.includes('Geldi')) durumBadge.classList.add('bg-success');
+                else if(props.durum.includes('Bekliyor')) durumBadge.classList.add('bg-warning', 'text-dark');
+                else durumBadge.classList.add('bg-danger');
+
+                new bootstrap.Modal(document.getElementById('eventModal')).show();
             }
         });
 
         calendar.render();
     });
 
-    // Modal içindeki "Rezerve Et" butonu
     function randevuyaGit() {
         var devId = document.getElementById('selectDevice').value;
         var date = document.getElementById('selectDate').value;
-        // Seçilen bilgilerle randevu sayfasına yönlendir
+        if (!devId) { alert("Lütfen bir cihaz seçin!"); return; }
         window.location.href = `/cihaz/${devId}/?tarih=${date}`;
     }
 </script>
 
-<div class="modal fade" id="eventModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header bg-light">
-        <h5 class="modal-title" id="mcTitle">Randevu Detayı</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <p><strong>Cihaz:</strong> <span id="mcCihaz"></span></p>
-        <p><strong>Kullanıcı:</strong> <span id="mcKullanici"></span></p>
-        <p><strong>Durum:</strong> <span id="mcDurum" class="badge bg-secondary"></span></p>
-      </div>
-    </div>
-  </div>
-</div>
-
 <div class="modal fade" id="selectModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header bg-primary text-white">
-        <h5 class="modal-title">Yeni Randevu Oluştur</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <label>Hangi cihaz için?</label>
-        <select id="selectDevice" class="form-select mb-3"></select>
-        
-        <label>Tarih</label>
-        <input id="selectDate" class="form-control" readonly>
-      </div>
-      <div class="modal-footer">
-        <button onclick="randevuyaGit()" class="btn btn-success w-100">Randevu Ekranına Git</button>
-      </div>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-primary text-white py-3">
+                <h5 class="modal-title fw-bold"><i class="bi bi-plus-circle me-2"></i>Yeni Randevu</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4 text-start">
+                <div class="mb-3 text-start">
+                    <label class="form-label fw-bold">Cihaz Seçimi</label>
+                    <select id="selectDevice" class="form-select border-2"></select>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label fw-bold text-muted small">Tarih</label>
+                    <input id="selectDate" class="form-control bg-light border-0" readonly>
+                </div>
+            </div>
+            <div class="modal-footer border-0 p-4 pt-0">
+                <button onclick="randevuyaGit()" class="btn btn-primary btn-lg w-100 rounded-pill fw-bold">Randevuya Git</button>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
 
+<div class="modal fade" id="eventModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-light border-0 py-3">
+                <h5 class="modal-title fw-bold text-primary" id="mcTitle">Cihaz Bilgisi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0 text-center">
+                <div class="py-4 bg-primary-subtle border-bottom border-white border-4">
+                    <h2 id="mcSaat" class="fw-bold text-primary mb-0"></h2>
+                    <small class="text-muted">Laboratuvar Kullanım Saati</small>
+                </div>
+                <div class="list-group list-group-flush text-start">
+                    <div class="list-group-item d-flex justify-content-between py-3 border-0">
+                        <span class="text-muted"><i class="bi bi-person me-2"></i>Kullanıcı:</span>
+                        <span id="mcKullanici" class="fw-bold text-dark"></span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between py-3 border-0 align-items-center">
+                        <span class="text-muted"><i class="bi bi-info-circle me-2"></i>Durum:</span>
+                        <span id="mcDurum"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 p-3">
+                <button type="button" class="btn btn-secondary w-100 rounded-pill" data-bs-dismiss="modal">Kapat</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

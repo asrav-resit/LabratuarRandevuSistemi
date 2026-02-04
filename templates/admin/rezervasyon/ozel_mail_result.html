@@ -1,0 +1,21 @@
+{% extends 'admin/base_site.html' %}
+
+{% block content %}
+<h1>📧 Gönderim Raporu</h1>
+<ul>
+  <li>Toplam alıcı: {{ total }}</li>
+  <li>Başarılı: {{ sent }}</li>
+  <li>Başarısız: {{ failed }}</li>
+</ul>
+{% if missing %}
+  <h3>E-posta adresi eksik olanlar (gönderilmedi):</h3>
+  <ul>{% for obj in missing %}<li>{{ obj }}</li>{% endfor %}</ul>
+{% endif %}
+
+{% if errors %}
+  <h3>Hatalar (örnek):</h3>
+  <ul>{% for e in errors|slice:":10" %}<li>{{ e }}</li>{% endfor %}</ul>
+{% endif %}
+
+<p><a href=".." class="button">Listeye Dön</a></p>
+{% endblock %}

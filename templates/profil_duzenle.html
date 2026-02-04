@@ -1,82 +1,159 @@
 {% extends 'base.html' %}
-
-{# Template: Profil düzenleme
-   View: `rezervasyon.views.profil_duzenle`
-   Beklenen context: 'u_form', 'p_form'
-#}
+{% load static %}
 
 {% block icerik %}
-<div class="container mt-5">
+<style>
+    /* BTÜ Temalı Arka Plan ve Kart Yapısı */
+    :root { --btu-blue: #003366; --btu-accent: #00a8cc; }
+
+    .profile-card {
+        border: none;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 10px 30px rgba(0, 51, 102, 0.1) !important;
+        overflow: hidden;
+    }
+
+    .profile-header {
+        background: linear-gradient(135deg, var(--btu-blue) 0%, #0056b3 100%);
+        padding: 3rem 1rem;
+        position: relative;
+    }
+
+    /* Profil Resmi Tasarımı */
+    .profile-img-container {
+        position: relative;
+        margin-top: -75px;
+        z-index: 5;
+    }
+
+    .profile-img {
+        width: 150px; 
+        height: 150px; 
+        object-fit: cover; 
+        border: 6px solid #ffffff;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+
+    .profile-img:hover { transform: scale(1.05); }
+
+    /* Form Elemanları Özelleştirmesi */
+    .form-label {
+        font-weight: 700;
+        color: var(--btu-blue);
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .form-control {
+        border-radius: 12px;
+        border: 2px solid #edf2f7;
+        padding: 0.75rem 1rem;
+        transition: all 0.2s;
+    }
+
+    .form-control:focus {
+        border-color: var(--btu-accent);
+        box-shadow: 0 0 0 0.25rem rgba(0, 168, 204, 0.15);
+    }
+
+    /* Bölüm Başlıkları */
+    .section-title {
+        color: var(--btu-accent);
+        font-weight: 800;
+        border-bottom: 2px solid #f0f4f8;
+        padding-bottom: 0.5rem;
+    }
+</style>
+
+<div class="container mt-2 mb-5">
     <div class="row justify-content-center">
-        <div class="col-md-8">
-
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">✏️ Bilgilerimi Düzenle</h4>
+        <div class="col-lg-8">
+            <div class="card profile-card">
+                
+                <div class="profile-header text-center text-white">
+                    <h3 class="fw-bold mb-0"><i class="bi bi-pencil-square me-2"></i>Hesap Bilgilerini Güncelle</h3>
+                    <p class="opacity-75 small">Sistem üzerindeki kimlik ve iletişim bilgilerini buradan yönetebilirsin.</p>
                 </div>
-                <div class="card-body p-4">
 
-                    <div class="text-center mb-4">
-                        {% if user.profil.resim %}
-                        <img src="{{ user.profil.resim.url }}" class="rounded-circle shadow-sm"
-                            style="width: 150px; height: 150px; object-fit: cover; border: 3px solid #f8f9fa;">
-                        {% else %}
-                        <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center mx-auto shadow-sm"
-                            style="width: 150px; height: 150px; font-size: 60px; border: 3px solid #f8f9fa;">
-                            {{ user.first_name|first|upper }}
-                        </div>
-                        {% endif %}
+                <div class="profile-img-container text-center mb-4">
+                    {% if user.profil.resim %}
+                    <img src="{{ user.profil.resim.url }}" class="rounded-circle profile-img bg-white">
+                    {% else %}
+                    <div class="rounded-circle bg-white d-flex align-items-center justify-content-center mx-auto profile-img">
+                        <span class="display-3 fw-bold text-primary">{{ user.first_name|first|upper }}</span>
                     </div>
+                    {% endif %}
+                </div>
 
-                    <form method="POST" enctype="multipart/form-data">
+                <div class="card-body p-4 p-lg-5">
+                    <form method="POST" enctype="multipart/form-data" class="needs-validation">
                         {% csrf_token %}
 
-                        <h5 class="text-secondary mb-3">Kişisel Bilgiler</h5>
-                        <div class="mb-3">
-                            <label class="form-label">Adınız</label>
-                            {{ u_form.first_name }}
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Soyadınız</label>
-                            {{ u_form.last_name }}
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">E-Posta Adresi</label>
-                            {{ u_form.email }}
-                        </div>
-
-                        <hr class="my-4">
-
-                        <h5 class="text-secondary mb-3">Okul Bilgileri</h5>
-
-                        <div class="mb-3">
-                            <label class="form-label">Profil Resmi</label>
-                            {{ p_form.resim }}
+                        <div class="row mb-5">
+                            <div class="col-12 mb-4 text-center">
+                                <h5 class="section-title"><i class="bi bi-person-lines-fill me-2"></i>Kişisel Bilgiler</h5>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Adınız</label>
+                                {{ u_form.first_name }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Soyadınız</label>
+                                {{ u_form.last_name }}
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Kurumsal E-Posta</label>
+                                {{ u_form.email }}
+                            </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Okul Numarası</label>
-                            {{ p_form.okul_numarasi }}
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Telefon Numarası</label>
-                            {{ p_form.telefon }}
+                        <div class="row mb-4">
+                            <div class="col-12 mb-4 text-center">
+                                <h5 class="section-title"><i class="bi bi-mortarboard-fill me-2"></i>Akademik & İletişim</h5>
+                            </div>
+                            
+                            <div class="col-12 mb-4">
+                                <div class="bg-light p-3 rounded-4 border">
+                                    <label class="form-label mb-2"><i class="bi bi-image me-2"></i>Profil Resmini Değiştir</label>
+                                    {{ p_form.resim }}
+                                    <small class="text-muted d-block mt-1">Önerilen boyut: 400x400 px (Kare)</small>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Okul Numarası</label>
+                                {{ p_form.okul_numarasi }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Telefon Numarası</label>
+                                {{ p_form.telefon }}
+                            </div>
                         </div>
 
-                        <div class="d-grid gap-2 mt-4">
-                            <button type="submit" class="btn btn-success btn-lg">
-                                Değişiklikleri Kaydet ✅
+                        <div class="d-grid gap-3 mt-5">
+                            <button type="submit" class="btn btn-primary btn-lg rounded-pill fw-bold shadow-sm py-3">
+                                <i class="bi bi-check-circle-fill me-2"></i>Değişiklikleri Uygula
                             </button>
-                            <a href="{% url 'randevularim' %}" class="btn btn-outline-secondary">
-                                İptal Et
+                            <a href="{% url 'randevularim' %}" class="btn btn-outline-secondary rounded-pill fw-bold border-0">
+                                <i class="bi bi-arrow-left me-1"></i> Vazgeç ve Geri Dön
                             </a>
                         </div>
                     </form>
-
                 </div>
             </div>
-
         </div>
     </div>
 </div>
+
+<script>
+    // Form elemanlarına bootstrap class'larını dinamik ekleme (Eğer forms.py'da eklenmediyse)
+    document.querySelectorAll('input, select').forEach(item => {
+        item.classList.add('form-control');
+    });
+</script>
 {% endblock %}
