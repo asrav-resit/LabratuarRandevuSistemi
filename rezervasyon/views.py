@@ -21,6 +21,7 @@ from django.db import transaction
 #ŞİFRE SIFIRLAMA İÇİN
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
+from django.core.mail import EmailMultiAlternatives
 
 # --- MODELS & FORMS ---
 from .models import Laboratuvar, Cihaz, Randevu, Profil, Duyuru, Ariza
@@ -433,35 +434,40 @@ def sifre_sifirla_talep(request):
             # Token ve ID oluşturma
             uid = urlsafe_base64_encode(force_bytes(user.pk))
             token = default_token_generator.make_token(user)
+            protocol = 'https' if request.is_secure() else 'http'
+            domain = request.get_host()
             
-            konu = "BTÜ Lab Sistemi | Şifre Sıfırlama"
-            context = {
-                'user': user,
-                'protocol': 'https' if request.is_secure() else 'http',
-                'domain': request.get_host(),
-                'uid': uid,
-                'token': token,
-            }
-
-            # Şablonu render et
-            html_icerik = render_to_string('password_reset_email.html', context)
-            duz_metin = strip_tags(html_icerik) 
-
-            # Mail gönderimi (Parametreler isimlendirildi)
-            send_mail(
-                subject=konu,
-                message=duz_metin,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[user.email],
-                html_message=html_icerik, # 🟢 Görseli bu satır çözer
-                fail_silently=False
+            # --- BURADAN İTİBAREN SENİN KODUN BAŞLIYOR ---
+            
+            # 1. HTML İçeriği Hazırla
+            html_content = render_to_string(
+                "password_reset_email.html", 
+                {
+                    'user': user,
+                    'reset_link': f"{protocol}://{domain}{reverse('password_reset_confirm', kwargs={'uidb64': uid, 'token': token})}"
+                }
             )
+
+            # 2. Düz Metin Halini Oluştur
+            text_content = strip_tags(html_content)
+
+            # 3. Çok Alternatifli E-posta Nesnesini Oluştur
+            email_obj = EmailMultiAlternatives(
+                subject="BTÜ Lab Sistemi | Şifre Sıfırlama",
+                body=text_content,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[user.email],
+            )
+
+            # 4. HTML Versiyonunu Ekle ve Gönder
+            email_obj.attach_alternative(html_content, "text/html")
+            email_obj.send()
             
+            # --- KODUN BURADA BİTİYOR ---
+
             messages.success(request, "✅ Şifre sıfırlama bağlantısı e-posta adresinize gönderildi.")
-            # return redirect('password_reset_done')  # Eğer bu isimde bir url varsa bunu kullan
-            return render(request, 'password_reset_flow.html', {'stage': 'done'}) # Veya flow şablonuna gönder
+            return render(request, "password_reset_flow.html", {"stage": "done"})
         else:
             messages.error(request, "❌ Bu e-posta adresiyle kayıtlı bir kullanıcı bulunamadı.")
-    
-    # Form aşaması için şablonu çağır
-    return render(request, 'password_reset_flow.html', {'stage': 'form'})
+            
+    return render(request, "password_reset_flow.html", {"stage": "form"})
