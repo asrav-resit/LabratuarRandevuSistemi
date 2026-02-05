@@ -114,6 +114,39 @@ def ozel_mail_action(modeladmin, request, queryset):
     # Redirect back to the changelist and then to the custom view
     return redirect('admin:rezervasyon_ozel_mail')
 
+@admin.action(description="🌟 Seçilenleri Süper Kullanıcı Yap")
+def super_kullanici_yap(modeladmin, request, queryset):
+    # Eğer queryset doğrudan User modeli değilse (Profil veya Randevu üzerinden geliyorsa)
+    # ilgili User nesnelerini çekmek için bir kontrol ekliyoruz.
+    guncellenen = 0
+    for obj in queryset:
+        # Nesnenin kendisi User mı yoksa 'user'/'kullanici' adında bir ilişkisi mi var?
+        user = None
+        if isinstance(obj, User):
+            user = obj
+        elif hasattr(obj, 'user'):
+            user = obj.user
+        elif hasattr(obj, 'kullanici'):
+            user = obj.kullanici
+            
+        if user and not user.is_superuser:
+            user.is_staff = True      # Yönetim paneline giriş izni
+            user.is_superuser = True  # Tam yetki
+            user.save()
+            guncellenen += 1
+            
+    if guncellenen > 0:
+        modeladmin.message_user(
+            request, 
+            f"✅ {guncellenen} kullanıcı başarıyla Süper Kullanıcı ve Personel yapıldı.", 
+            messages.SUCCESS
+        )
+    else:
+        modeladmin.message_user(
+            request, 
+            "⚠️ Seçilenler zaten süper kullanıcı veya geçerli kullanıcı bulunamadı.", 
+            messages.WARNING
+        )
 
 class AdminMassMailMixin:
     """Mixin to add an admin view for sending custom emails to selected objects."""
@@ -374,7 +407,7 @@ admin.site.unregister(User)
 
 @admin.register(User)
 class CustomUserAdmin(AdminMassMailMixin, UserAdmin):
-    actions = [aktif_yap, pasif_yap, mail_gonder, ozel_mail_action]
+    actions = [aktif_yap, pasif_yap, mail_gonder, ozel_mail_action,super_kullanici_yap]
 
 @admin.register(OnayBekleyenler)
 class OnayBekleyenlerAdmin(AdminMassMailMixin, UserAdmin):

@@ -18,6 +18,9 @@ from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Count
 from django.db import transaction
+#ŞİFRE SIFIRLAMA İÇİN
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
 
 # --- MODELS & FORMS ---
 from .models import Laboratuvar, Cihaz, Randevu, Profil, Duyuru, Ariza
@@ -417,3 +420,43 @@ def ariza_bildir_genel(request):
             messages.error(request, "Sistemde kayıtlı cihaz bulunamadığı için bildirim yapılamadı.")
             
     return redirect(request.META.get('HTTP_REFERER', 'anasayfa'))
+# ============================================================
+#ŞİFRE SIFIRLAMA GÖRÜNÜMLERİ
+# ============================================================
+@login_required
+def sifre_sifirla_talep(request):
+    if request.method == "POST":
+        email = request.POST.get('email')
+        user = User.objects.filter(email=email).first()
+        
+        if user:
+            # Token ve ID oluşturma (E-posta içindeki link için gerekli)
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            token = default_token_generator.make_token(user)
+            
+            # --- VERDİĞİM KOD BURAYA GELİYOR ---
+            konu = "BTÜ Lab Sistemi | Şifre Sıfırlama"
+            context = {
+                'user': user,
+                'protocol': 'https' if request.is_secure() else 'http',
+                'domain': request.get_host(),
+                'uid': uid,
+                'token': token,
+            }
+
+            html_icerik = render_to_string('password_reset_email.html', context)
+            duz_metin = strip_tags(html_icerik) 
+
+            send_mail(
+                konu, 
+                duz_metin, 
+                settings.DEFAULT_FROM_EMAIL, 
+                [user.email], 
+                html_message=html_icerik
+            )
+            # ----------------------------------
+            
+            messages.success(request, "Şifre sıfırlama bağlantısı gönderildi.")
+            return redirect('password_reset_done')
+    
+    return render(request, 'password_reset_form.html')
