@@ -248,7 +248,7 @@ def profil_duzenle(request):
     return render(request, "profil_duzenle.html", {"u_form": u_form, "p_form": p_form})
 
 # ============================================================
-# 5️⃣ YÖNETİM & BİLDİRİM API ( image_1c8dc0.png ve image_792300.png UYUMLU)
+# 5️⃣ YÖNETİM & BİLDİRİM API 
 # ============================================================
 @staff_member_required
 def onay_bekleyen_sayisi(request):
@@ -297,57 +297,67 @@ def ariza_bildir(request, cihaz_id):
             messages.warning(request, "⚠️ Arıza bildirimi alındı."); return redirect("lab_detay", lab_id=cihaz.lab.id)
     return render(request, "ariza_bildir.html", {"form": ArizaFormu(), "cihaz": cihaz})
 
-# Boş kalan fonksiyonlar (URL uyumu için)
+# Boş kalan fonksiyonlar (URL uyumu için)# rezervasyon/views.py
+import random
+from django.core.mail import send_mail
+
 def kayit(request):
-    """Kayıt sayfası: Kullanıcıyı pasif olarak oluşturur ve doğrulamaya yönlendirir."""
     if request.method == "POST":
         form = KayitFormu(request.POST)
         if form.is_valid():
-            # Kullanıcıyı oluşturur ancak login yapmaz (CSRF hatasını önlemek için kritik)
-            user = form.save() 
+            user = form.save(commit=False)
+            user.is_active = False  # 🔴 Burası kritik: Kullanıcıyı PASİF yapar
+            user.save() 
             
-            # NOT: Burada normalde e-posta gönderme kodu çalışır. 
-            # Şu an terminale (konsola) kodun düşmesi bekleniyor.
-            
-            messages.success(request, "✅ Kayıt başarılı! Lütfen e-postanıza gelen 6 haneli kodu girin.")
-            
-            # Kullanıcı ID'sini session'da tutarak doğrulama sayfasında kimin geldiğini bilebiliriz
-            request.session['dogrulama_user_id'] = user.id 
-            return redirect("email_dogrulama") # Kayıt sonrası doğru sayfa
+            # Doğrulama kodu üret ve session'a at
+            dogrulama_kodu = str(random.randint(100000, 999999))
+            request.session['dogrulama_kodu'] = dogrulama_kodu
+            request.session['dogrulama_user_id'] = user.id
+
+            # Mail gönderimi
+            try:
+                send_mail(
+                    "BTÜ Lab Kayıt Doğrulama",
+                    f"Doğrulama kodunuz: {dogrulama_kodu}",
+                    settings.DEFAULT_FROM_EMAIL,
+                    [user.email],
+                    fail_silently=False
+                )
+            except Exception as e:
+                print(f"Mail Hatası: {e}") # Hatayı sunucu logunda görebilirsin
+
+            messages.success(request, "Kayıt başarılı! Lütfen mailine gelen kodu gir.")
+            return redirect("email_dogrulama")
     else:
         form = KayitFormu()
-
     return render(request, "kayit.html", {"form": form})
 
 def email_dogrulama(request):
-    """Kullanıcının girdiği 6 haneli kodu kontrol eder ve hesabı aktifleştirir."""
     user_id = request.session.get('dogrulama_user_id')
+    dogrulama_kodu = request.session.get('dogrulama_kodu')
     
-    if not user_id:
+    if not user_id or not dogrulama_kodu:
         return redirect("kayit")
 
     if request.method == "POST":
         girilen_kod = request.POST.get("kod")
         
-        # --- DOĞRULAMA MANTIĞI ---
-        # Burada terminale düşen kodu manuel kontrol edebilir veya 
-        # şimdilik test için '123456' gibi sabit bir kodla ilerleyebilirsin.
-        if girilen_kod == "123456": # ÖRNEK TEST KODU
+        # Sabit '123456' yerine session'daki rastgele kodu kontrol ediyoruz
+        if girilen_kod == dogrulama_kodu: 
             from django.contrib.auth.models import User
             user = get_object_or_404(User, id=user_id)
-            user.is_active = True # Hesabı açıyoruz
+            user.is_active = True # 🟢 Şimdi aktif ediyoruz
             user.save()
             
-            # Temizlik
             del request.session['dogrulama_user_id']
+            del request.session['dogrulama_kodu']
             
-            messages.success(request, "🎉 Hesabınız doğrulandı! Şimdi giriş yapabilirsiniz.")
+            messages.success(request, "🎉 Hesabınız doğrulandı! Giriş yapabilirsiniz.")
             return redirect("giris")
         else:
-            messages.error(request, "❌ Hatalı doğrulama kodu. Lütfen tekrar deneyin.")
+            messages.error(request, "❌ Hatalı doğrulama kodu.")
 
     return render(request, "email_dogrulama.html")
-
 @login_required
 def randevu_pdf_indir(request):
     randevular = (
