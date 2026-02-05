@@ -422,19 +422,18 @@ def ariza_bildir_genel(request):
     return redirect(request.META.get('HTTP_REFERER', 'anasayfa'))
 # ============================================================
 #ŞİFRE SIFIRLAMA GÖRÜNÜMLERİ
-# ============================================================
-@login_required
+# ============================================================# views.py (Dekoratörü kaldırdık ve send_mail kısmını netleştirdik)
+
 def sifre_sifirla_talep(request):
     if request.method == "POST":
         email = request.POST.get('email')
         user = User.objects.filter(email=email).first()
         
         if user:
-            # Token ve ID oluşturma (E-posta içindeki link için gerekli)
+            # Token ve ID oluşturma
             uid = urlsafe_base64_encode(force_bytes(user.pk))
             token = default_token_generator.make_token(user)
             
-            # --- VERDİĞİM KOD BURAYA GELİYOR ---
             konu = "BTÜ Lab Sistemi | Şifre Sıfırlama"
             context = {
                 'user': user,
@@ -444,19 +443,25 @@ def sifre_sifirla_talep(request):
                 'token': token,
             }
 
+            # Şablonu render et
             html_icerik = render_to_string('password_reset_email.html', context)
             duz_metin = strip_tags(html_icerik) 
 
+            # Mail gönderimi (Parametreler isimlendirildi)
             send_mail(
-                konu, 
-                duz_metin, 
-                settings.DEFAULT_FROM_EMAIL, 
-                [user.email], 
-                html_message=html_icerik
+                subject=konu,
+                message=duz_metin,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[user.email],
+                html_message=html_icerik, # 🟢 Görseli bu satır çözer
+                fail_silently=False
             )
-            # ----------------------------------
             
-            messages.success(request, "Şifre sıfırlama bağlantısı gönderildi.")
-            return redirect('password_reset_done')
+            messages.success(request, "✅ Şifre sıfırlama bağlantısı e-posta adresinize gönderildi.")
+            # return redirect('password_reset_done')  # Eğer bu isimde bir url varsa bunu kullan
+            return render(request, 'password_reset_flow.html', {'stage': 'done'}) # Veya flow şablonuna gönder
+        else:
+            messages.error(request, "❌ Bu e-posta adresiyle kayıtlı bir kullanıcı bulunamadı.")
     
-    return render(request, 'password_reset_form.html')
+    # Form aşaması için şablonu çağır
+    return render(request, 'password_reset_flow.html', {'stage': 'form'})
